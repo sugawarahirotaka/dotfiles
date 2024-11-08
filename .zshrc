@@ -1,0 +1,119 @@
+autoload -U colors compinit
+autoload history-search-end
+colors
+compinit
+# Tabで次の候補に、Shift+Tabで前の候補に移動する設定
+bindkey "^[[Z" reverse-menu-complete
+# fzf zsh-autocompleteで曖昧補完
+#source /Users/sugawara/Documents/Setting/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+
+# fzf
+source /opt/local/share/fzf/shell/completion.zsh
+source /opt/local/share/fzf/shell/key-bindings.zsh
+
+PS1="%{$fg[green]%}[%m %~]%{$fg[default]%}>"
+export JAVA_HOME=`/usr/libexec/java_home`
+WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
+#補完候補の設定
+fignore=(.o .aux .log .bbl .blg .lof .lot .toc \~)
+# emacsのエイリアス
+alias emacs="/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs -nw"
+# .zshrcのエイリアス
+alias sz="source ~/.zshrc"
+alias ez="emacs ~/.zshrc"
+# Python
+alias py='python'
+# Git
+alias g='git'
+# quicklookのエイリアス
+alias ql="qlmanage -p"
+# lsのおすすめ設定
+alias ls="/bin/ls -GF"
+zle -N history-beginning-search-backward-end history-search-end
+zle -N history-beginning-search-forward-end history-search-end
+bindkey "^P" history-beginning-search-backward-end
+bindkey "^N" history-beginning-search-forward-end
+# X11.app(GUIの画面をmacOSに表示するやつ)の設定
+export DISPLAY=:0
+
+# ディレクトリが変わるたびにlsを表示する関数
+chpwd () {
+    ls;
+    }
+
+# コマンド入力中のマニュアル表示
+[ -n "`alias run-hel`" ] && unalias run-help
+autoload run-help
+
+#小文字と大文字の区別を無くす
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+
+# 色つけるやつ
+zstyle ':completion:*default' menu select=1
+export LSCOLORS=gxfxcxdxbxegedabagacad
+zstyle ':completion:*' list-colors di=36 ln=35 ex=31 '=*.c=33' '=*.py=33'
+
+# ヒストリ ALL_EXPORTしたら、export書く必要なくなる
+export HISTFILE=~/.zsh_history
+export SAVEHIST=100000
+export HISTSIZE=2000
+
+# setopt
+setopt IGNORE_EOF
+setopt CORRECT
+setopt SHARE_HISTORY
+setopt HIST_REDUCE_BLANKS
+setopt HIST_IGNORE_SPACE
+unsetopt auto_remove_slash
+setopt menu_complete
+setopt numeric_glob_sort
+unsetopt nomatch
+
+fpath=(~/Educ2024/zsh/tmp/func $fpath)
+autoload ${fpath[1]}/*(:t)
+
+# kittyのための設定
+export EDITOR=emacs
+export PATH=$PATH:/Applications/LibreOffice.app/Contents/MacOS
+
+### direnv for python virtualenv
+if whence direnv &>/dev/null; then
+  eval "$(direnv hook zsh)"
+fi
+
+# for thefuck
+eval $(thefuck --alias)
+
+setopt PROMPT_SUBST
+
+show_virtual_env() {
+  if [[ -n "$VIRTUAL_ENV" && -n "$DIRENV_DIR" ]]; then
+    echo "($(basename $VIRTUAL_ENV))"
+  fi
+}
+PS1='$(show_virtual_env)'$PS1
+
+
+# メッセージをJSON形式で作成
+slack_message() {
+  local message=$1
+  cat <<EOF
+{
+  "text": "$message"
+}
+EOF
+}
+
+# メッセージを送信
+notify_slack() {
+  local message=$1
+  curl -X POST -H 'Content-type: application/json' --data "$(slack_message "$message")" $WEBHOOK_URL
+}
+
+
+done-notify() {
+  local var=$(echo $history[$HISTCMD] | sed -e "s/$0//" -e 's/ *; *//' -e 's/ *&& *//')
+  local current_dir=$(print -P %0~)
+  notify_slack "[$current_dir] $var finished!"
+}
+source /Users/sugawara/Documents/Setting/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

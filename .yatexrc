@@ -1,0 +1,6 @@
+(setq user-env-table '(
+("itembox")
+))
+(setq YaTeX::usepackage-alist-private '(
+("hyperref")
+))
