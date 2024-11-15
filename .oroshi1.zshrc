@@ -1,0 +1,2 @@
+unalias emacs
+# emacsのエイリアス                                                                                                                       alias emacs="/opt/local/bin/emacs -nw"
