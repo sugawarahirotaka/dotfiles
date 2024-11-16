@@ -13,8 +13,17 @@ bindkey "^[[Z" reverse-menu-complete
 #source /opt/local/share/fzf/shell/completion.zsh
 #source /opt/local/share/fzf/shell/key-bindings.zsh
 
-PS1="%{$fg[green]%}[%m %~]%{$fg[default]%}>"
-export JAVA_HOME=`/usr/libexec/java_home`
+if [[ "$HOST" == "dhcp145" || "$HOST" == "Sugawara-MacBook-Air" ]]; then
+    PS1="%{$fg[green]%}[%m %~]%{$fg[default]%}>"
+    export JAVA_HOME=`/usr/libexec/java_home`
+    # for thefuck
+    eval $(thefuck --alias)
+    # macair コマンドの候補に色付け
+    source /Users/sugawara/Documents/Setting/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+else
+    PS1="%{$fg[blue]%}[%m %~]%{$fg[default]%}>"
+fi
+
 WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
 #補完候補の設定
 fignore=(.o .aux .log .bbl .blg .lof .lot .toc \~)
@@ -88,9 +97,6 @@ if [ -f "$HOME/.zshrc.$HOST" ]; then
     source "$HOME/.zshrc.$HOST"
 fi
 
-# for thefuck
-eval $(thefuck --alias)
-
 setopt PROMPT_SUBST
 
 show_virtual_env() {
@@ -133,8 +139,3 @@ nvistat() {
         done
   end
 }
-
-# macair コマンドの候補に色付け
-if  [ -f "$HOME/.$HOME.zsh" ]; then
-    source /Users/sugawara/Documents/Setting/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-fi
