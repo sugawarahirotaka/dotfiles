@@ -13,7 +13,7 @@ bindkey "^[[Z" reverse-menu-complete
 #source /opt/local/share/fzf/shell/completion.zsh
 #source /opt/local/share/fzf/shell/key-bindings.zsh
 
-if [[ "$HOST" == "dhcp145" || "$HOST" == "Sugawara-MacBook-Air" ]]; then
+if [[ "$HOST" == "dhcp145" || "$HOST" == "Sugawara-MacBook-Air.local" ]]; then
     PS1="%{$fg[green]%}[%m %~]%{$fg[default]%}>"
     export JAVA_HOME=`/usr/libexec/java_home`
     # for thefuck
