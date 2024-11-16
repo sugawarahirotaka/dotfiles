@@ -84,10 +84,10 @@ if whence direnv &>/dev/null; then
 fi
 
 # リモートサーバの個別設定
-if [ -f "$HOME/.$HOME.zsh" ]; then
-    source "$HOME/.$HOME.zsh"
+if [ -f "$HOME/.zshrc.$HOST" ]; then
+    source "$HOME/.zshrc.$HOST"
 fi
-  
+
 # for thefuck
 eval $(thefuck --alias)
 
