@@ -6,8 +6,6 @@ colors
 compinit
 # Tabで次の候補に、Shift+Tabで前の候補に移動する設定
 bindkey "^[[Z" reverse-menu-complete
-# fzf zsh-autocompleteで曖昧補完
-#source /Users/sugawara/Documents/Setting/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 
 # fzf
 #source /opt/local/share/fzf/shell/completion.zsh
@@ -35,8 +33,6 @@ precmd(){
       export JAVA_HOME=`/usr/libexec/java_home`
       # for thefuck
       eval $(thefuck --alias)
-      # macair コマンドの候補に色付け
-      source /Users/sugawara/Documents/Setting/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
   else
       git_prompt_other
   fi
@@ -158,3 +154,8 @@ nvistat() {
         done
   end
 }
+
+# コマンド入力のサジェスト
+source $HOME/dotfiles/zsh-autosuggestions/zsh-autosuggestions.zsh
+# macair コマンドの候補に色付け
+source $HOME/dotfiles/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
