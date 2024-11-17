@@ -13,16 +13,35 @@ bindkey "^[[Z" reverse-menu-complete
 #source /opt/local/share/fzf/shell/completion.zsh
 #source /opt/local/share/fzf/shell/key-bindings.zsh
 
-if [[ "$HOST" == "dhcp145" || "$HOST" == "Sugawara-MacBook-Air.local" ]]; then
-    PS1="%{$fg[green]%}[%m %~]%{$fg[default]%}>"
-    export JAVA_HOME=`/usr/libexec/java_home`
-    # for thefuck
-    eval $(thefuck --alias)
-    # macair コマンドの候補に色付け
-    source /Users/sugawara/Documents/Setting/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-else
-    PS1="%{$fg[blue]%}[%m %~]%{$fg[default]%}>"
-fi
+# プロンプトにgitのブランチ名などを表示
+source $HOME/dotfiles/zsh-git-prompt/zshrc.sh
+git_prompt_air(){
+    if [ "$(git rev-parse --is-inside-work-tree 2> /dev/null)" = true ]; then
+      PS1="%{$fg[green]%}%m:%~%{$fg[default]%}$(git_super_status)>"
+    else
+      PS1="%{$fg[green]%}%m:%~%{$fg[default]%}>"
+    fi
+}
+git_prompt_other(){
+    if [ "$(git rev-parse --is-inside-work-tree 2> /dev/null)" = true ]; then
+      PS1="%{$fg[blue]%}%m:%~%{$fg[default]%}$(git_super_status)>"
+    else
+      PS1="%{$fg[blue]%}%m:%~%{$fg[default]%}>"
+    fi
+}
+precmd(){
+  if [[ "$HOST" == "dhcp145.fun.bio.keio.ac.jp" || "$HOST" == "Sugawara-MacBook-Air.local" ]]; then
+      git_prompt_air
+      export JAVA_HOME=`/usr/libexec/java_home`
+      # for thefuck
+      eval $(thefuck --alias)
+      # macair コマンドの候補に色付け
+      source /Users/sugawara/Documents/Setting/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+  else
+      git_prompt_other
+  fi
+}
+
 
 WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
 #補完候補の設定
