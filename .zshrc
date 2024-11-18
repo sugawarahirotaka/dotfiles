@@ -13,6 +13,7 @@ bindkey "^[[Z" reverse-menu-complete
 
 # プロンプトにgitのブランチ名などを表示
 source $HOME/dotfiles/zsh-git-prompt/zshrc.sh
+
 git_prompt_air(){
     if [ "$(git rev-parse --is-inside-work-tree 2> /dev/null)" = true ]; then
       PS1="%{$fg[green]%}%m:%~%{$fg[default]%}$(git_super_status)>"
@@ -20,6 +21,7 @@ git_prompt_air(){
       PS1="%{$fg[green]%}%m:%~%{$fg[default]%}>"
     fi
 }
+
 git_prompt_other(){
     if [ "$(git rev-parse --is-inside-work-tree 2> /dev/null)" = true ]; then
       PS1="%{$fg[blue]%}%m:%~%{$fg[default]%}$(git_super_status)>"
@@ -27,11 +29,21 @@ git_prompt_other(){
       PS1="%{$fg[blue]%}%m:%~%{$fg[default]%}>"
     fi
 }
+
+# 仮想環境の表示を調整
 show_virtual_env() {
-  if [[ -n "$VIRTUAL_ENV" || -n "$DIRENV_DIR" ]]; then
-    echo "($(basename $VIRTUAL_ENV))"
+  local env_name=""
+  # conda環境がアクティブな場合（CONDA_DEFAULT_ENVまたはDIRENV_DIRが定義されている場合）
+  if [[ -n "$CONDA_DEFAULT_ENV" || -n "$DIRENV_DIR" ]]; then
+    env_name="$env_name($CONDA_DEFAULT_ENV)"
   fi
+  # pipの仮想環境がアクティブな場合（VIRTUAL_ENVが定義されている場合）
+  if [[ -n "$VIRTUAL_ENV" ]]; then
+    env_name="($(basename $VIRTUAL_ENV))"
+  fi
+  echo "$env_name"
 }
+
 precmd(){
   if [[ "$HOST" == "dhcp145.fun.bio.keio.ac.jp" || "$HOST" == "Sugawara-MacBook-Air.local" ]]; then
       git_prompt_air
@@ -41,7 +53,8 @@ precmd(){
   else
       git_prompt_other
   fi
-  PS1="$(show_virtual_env)$PS1"
+  # 仮想環境名をプロンプトの先頭に表示
+  PS1="$(show_virtual_env) $PS1"
 }
 
 
