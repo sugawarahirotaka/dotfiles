@@ -54,7 +54,7 @@ precmd(){
       git_prompt_other
   fi
   # 仮想環境名をプロンプトの先頭に表示
-  PS1="$(show_virtual_env) $PS1"
+  PS1="$(show_virtual_env)$PS1"
 }
 
 
