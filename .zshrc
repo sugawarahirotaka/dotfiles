@@ -27,6 +27,11 @@ git_prompt_other(){
       PS1="%{$fg[blue]%}%m:%~%{$fg[default]%}>"
     fi
 }
+show_virtual_env() {
+  if [[ -n "$VIRTUAL_ENV" || -n "$DIRENV_DIR" ]]; then
+    echo "($(basename $VIRTUAL_ENV))"
+  fi
+}
 precmd(){
   if [[ "$HOST" == "dhcp145.fun.bio.keio.ac.jp" || "$HOST" == "Sugawara-MacBook-Air.local" ]]; then
       git_prompt_air
@@ -36,6 +41,7 @@ precmd(){
   else
       git_prompt_other
   fi
+  PS1="$(show_virtual_env)$PS1"
 }
 
 
@@ -113,13 +119,6 @@ if [ -f "$HOME/.zshrc.$HOST" ]; then
 fi
 
 setopt PROMPT_SUBST
-
-show_virtual_env() {
-  if [[ -n "$VIRTUAL_ENV" && -n "$DIRENV_DIR" ]]; then
-    echo "($(basename $VIRTUAL_ENV))"
-  fi
-}
-PS1='$(show_virtual_env)'$PS1
 
 # slack done-notify
 # メッセージをJSON形式で作成
