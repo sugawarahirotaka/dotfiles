@@ -30,16 +30,15 @@ git_prompt_other(){
     fi
 }
 
-# 仮想環境の表示を調整
 show_virtual_env() {
   local env_name=""
   # conda環境がアクティブな場合（CONDA_DEFAULT_ENVまたはDIRENV_DIRが定義されている場合）
   if [[ -n "$CONDA_DEFAULT_ENV" || -n "$DIRENV_DIR" ]]; then
-    env_name="$env_name($CONDA_DEFAULT_ENV)"
+    env_name="($CONDA_DEFAULT_ENV)"
   fi
   # pipの仮想環境がアクティブな場合（VIRTUAL_ENVが定義されている場合）
   if [[ -n "$VIRTUAL_ENV" ]]; then
-    env_name="($(basename $VIRTUAL_ENV))"
+    env_name="${env_name}($(basename $VIRTUAL_ENV))"
   fi
   echo "$env_name"
 }
