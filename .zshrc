@@ -73,6 +73,8 @@ alias g='git'
 alias ql="qlmanage -p"
 # lsのおすすめ設定
 alias ls="/bin/ls -GF"
+# make cleanのエイリアス
+alias remake="make clean && make"
 zle -N history-beginning-search-backward-end history-search-end
 zle -N history-beginning-search-forward-end history-search-end
 bindkey "^P" history-beginning-search-backward-end
