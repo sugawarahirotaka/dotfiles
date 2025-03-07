@@ -196,3 +196,8 @@ shrinkpdf () {
 	out=${1:r}-s.pdf
 	gs -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.5 -dPDFSETTINGS=/printer -sOutputFile=${out} $1
 }
+
+# ssh for kitty
+if [[ "$TERM" == "xterm-kitty" ]]; then
+    alias ssh="kitten ssh"
+fi
