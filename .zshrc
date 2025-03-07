@@ -185,3 +185,14 @@ nvistat() {
 source $HOME/dotfiles/zsh-autosuggestions/zsh-autosuggestions.zsh
 # macair コマンドの候補に色付け
 source $HOME/dotfiles/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+shrinkpdf () {
+	if [ $# -lt 1 ]
+	then
+		echo "Usage: $0 file.pdf"
+		echo "  will shrink file.pdf"
+		return
+	fi
+	out=${1:r}-s.pdf
+	gs -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.5 -dPDFSETTINGS=/printer -sOutputFile=${out} $1
+}
