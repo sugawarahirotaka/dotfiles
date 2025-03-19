@@ -2,6 +2,7 @@ source $HOME/dotfiles/.zshrc.private
 autoload -U compinit
 autoload history-search-end
 autoload -Uz colors
+setopt autoresume
 colors
 compinit
 # Tabで次の候補に、Shift+Tabで前の候補に移動する設定
