@@ -115,6 +115,14 @@ unsetopt auto_remove_slash
 setopt menu_complete
 setopt numeric_glob_sort
 unsetopt nomatch
+# cd したら自動的にpushdする
+setopt AUTO_PUSHD
+# 重複したディレクトリをスタックに追加しない
+setopt PUSHD_IGNORE_DUPS
+DIRSTACKSIZE=20
+
+alias cdd='cd ..'
+alias cds='dirs -v; echo -n "select number: "; read newdir; cd +"$newdir"'
 
 fpath=(~/Educ2024/zsh/tmp/func $fpath)
 autoload ${fpath[1]}/*(:t)
