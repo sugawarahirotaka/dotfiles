@@ -122,7 +122,7 @@ setopt PUSHD_IGNORE_DUPS
 DIRSTACKSIZE=20
 
 alias cdd='cd ..'
-alias cds='dirs -v; echo -n "select number: "; read newdir; cd +"$newdir"'
+alias d='dirs -v; echo -n "select number: "; read newdir; cd +"$newdir"'
 
 fpath=(~/Educ2024/zsh/tmp/func $fpath)
 autoload ${fpath[1]}/*(:t)
