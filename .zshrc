@@ -92,9 +92,10 @@ chpwd () {
 [ -n "`alias run-hel`" ] && unalias run-help
 autoload run-help
 
-#小文字と大文字の区別を無くす
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
-
+# 小文字と大文字の区別を無くす＋部分一致の補完
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}' 'r:|=*' 'l:|=* r:|=*'
+# .から始まるファイルも補完の候補に出す
+setopt globdots
 # 色つけるやつ
 zstyle ':completion:*default' menu select=1
 export LSCOLORS=gxfxcxdxbxegedabagacad
