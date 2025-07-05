@@ -2,3 +2,5 @@
 .zshrc.private
 .config/raycast/
 .config/fontforge/
+.config/qiita-cli/
+.config/karabiner/automatic_backups/
