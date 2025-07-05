@@ -25,10 +25,18 @@ local function createManagedHotkey(modifiers, key, callback)
 end
 
 -- =============================================================================
--- === アプリケーションに応じたホットキーの有効/無効化 ===
+-- === アプリケーションに応じたホットキーの有効/無効化 (改善版) ===
 -- =============================================================================
--- iTerm2のような特定のアプリケーションでは、これらのカスタムホットキーが
--- 本来持つ意味で使われるため、無効化します。
+
+-- ホットキーを無効化したいアプリケーションのバンドルIDリスト
+local blacklistedBundleIDs = {
+  ["com.googlecode.iterm2"] = true,
+  ["com.github.wez.wezterm"] = true,
+  ["net.kovidgoyal.kitty"] = true,
+  ["io.alacritty"] = true,
+  ["co.zeit.hyper"] = true,
+  ["com.apple.Terminal"] = true,
+}
 
 local function disableManagedHotkeys()
 	for _, hotkey in ipairs(managedHotkeys) do
@@ -42,51 +50,52 @@ local function enableManagedHotkeys()
 	end
 end
 
--- 最前面のアプリケーションに応じてホットキーを有効/無効にするためのウォッチャー
-local function handleGlobalAppEvent(appName, eventType, appObject)
-	if eventType == hs.application.watcher.activated then
-		if
-			appName == "iTerm2"
-			or appName == "WezTerm"
-			or appName == "kitty"
-			or appName == "Alacritty"
-			or appName == "Hyper"
-			or appName == "Terminal"
-		then
-			disableManagedHotkeys()
-		else
-			enableManagedHotkeys()
-		end
-	end
-end
+-- --- ★★★ 変更点：デバウンス処理の導入 ★★★ ---
+-- アプリケーション切り替えのイベントが連続で発生しても、最後のものだけを処理するためのタイマー
+local appSwitchTimer = hs.timer.new(0.2, function()
+    local app = hs.application.frontmostApplication()
+    if app then
+        local bundleID = app:bundleID()
+        if blacklistedBundleIDs[bundleID] then
+            disableManagedHotkeys()
+        else
+            enableManagedHotkeys()
+        end
+    end
+end)
 
-local appWatcher = hs.application.watcher.new(handleGlobalAppEvent)
+-- 最前面のアプリケーションが変更されたときに呼び出されるウォッチャー
+local appWatcher = hs.application.watcher.new(function(appName, eventType, appObject)
+    if eventType == hs.application.watcher.activated then
+        -- イベントが発生するたびにタイマーをリセットして再開する（デバウンス）
+        appSwitchTimer:start()
+    end
+end)
 appWatcher:start()
+
 
 -- =============================================================================
 -- === Emacs風キーリマップ設定 ===
 -- =============================================================================
 
 -- カーソル移動
-createManagedHotkey({ "ctrl" }, "f", keyCode("right")) -- Forward:  カーソルを右へ
-createManagedHotkey({ "ctrl" }, "b", keyCode("left")) -- Backward: カーソルを左へ
-createManagedHotkey({ "ctrl" }, "p", keyCode("up")) -- Previous: カーソルを上へ
-createManagedHotkey({ "ctrl" }, "n", keyCode("down")) -- Next:     カーソルを下へ
-createManagedHotkey({ "ctrl" }, "a", keyCode("left", { "cmd" })) -- Ahead:    行頭へ移動
-createManagedHotkey({ "ctrl" }, "e", keyCode("right", { "cmd" })) -- End:      行末へ移動
+createManagedHotkey({ "ctrl" }, "f", keyCode("right"))
+createManagedHotkey({ "ctrl" }, "b", keyCode("left"))
+createManagedHotkey({ "ctrl" }, "p", keyCode("up"))
+createManagedHotkey({ "ctrl" }, "n", keyCode("down"))
+createManagedHotkey({ "ctrl" }, "a", keyCode("left", { "cmd" }))
+createManagedHotkey({ "ctrl" }, "e", keyCode("right", { "cmd" }))
 
 -- テキスト削除
-createManagedHotkey({ "ctrl" }, "h", keyCode("delete")) -- Backspace: カーソル前の文字を削除
-createManagedHotkey({ "ctrl" }, "d", keyCode("forwarddelete")) -- Delete: カーソル後の文字を削除
+createManagedHotkey({ "ctrl" }, "h", keyCode("delete"))
+createManagedHotkey({ "ctrl" }, "d", keyCode("forwarddelete"))
 
--- "kill line" (カーソル位置から行末まで削除) のための特別関数
+-- "kill line"
 local function killLine()
-	-- 1. Shift+Cmd+Right で行末までを選択
 	hs.eventtap.event.newKeyEvent({ "shift", "cmd" }, "right", true):post()
 	hs.timer.usleep(1000)
 	hs.eventtap.event.newKeyEvent({ "shift", "cmd" }, "right", false):post()
 	hs.timer.usleep(1000)
-	-- 2. Deleteキーで選択範囲を削除 (クリップボードには残らない)
 	hs.eventtap.event.newKeyEvent({}, "delete", true):post()
 	hs.timer.usleep(1000)
 	hs.eventtap.event.newKeyEvent({}, "delete", false):post()
@@ -96,15 +105,13 @@ createManagedHotkey({ "ctrl" }, "k", killLine)
 -- =============================================================================
 -- === 初期状態の設定 ===
 -- =============================================================================
--- Hammerspoonの起動時またはリロード時に、現在アクティブなアプリの状態をチェックする
+-- Hammerspoonの起動時またはリロード時に、現在の状態を正しく反映させる
 local function setInitialState()
-    local currentApp = hs.application.frontmostApplication()
-    if currentApp then
-        handleGlobalAppEvent(currentApp:name(), hs.application.watcher.activated, currentApp)
-    end
+    -- タイマーを一度トリガーして現在の状態をチェックさせる
+    appSwitchTimer:start()
 end
 
 setInitialState()
 
 -- 設定がリロードされたことを通知
-hs.alert.show("Hammerspoon: Emacsキーバインドが読み込まれました")
+hs.alert.show("Hammerspoon: Emacsキーバインドが読み込まれました (安定版)")
