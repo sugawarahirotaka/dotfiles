@@ -302,3 +302,6 @@ restore-nvim() {
     mv $backup_cache  ~/.cache/nvim
   fi
 }
+
+# Created by `pipx` on 2025-07-14 09:08:57
+export PATH="$PATH:/Users/sugawara/.local/bin"

@@ -3,3 +3,6 @@
 export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 # Finished adapting your PATH environment variable for use with MacPorts.
 
+
+# Created by `pipx` on 2025-07-14 09:08:57
+export PATH="$PATH:/Users/sugawara/.local/bin"
