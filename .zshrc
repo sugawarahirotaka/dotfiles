@@ -161,21 +161,9 @@ notify_slack() {
 }
 # コマンド終了通知関数
 done-notify() {
-  local start_time=$(date +%s)  # 開始時刻のタイムスタンプを取得
   local var=$(echo $history[$HISTCMD] | sed -e "s/$0//" -e 's/ *; *//' -e 's/ *&& *//')
   local current_dir=$(pwd)  # 現在のディレクトリを取得
-  # コマンドの実行
-  eval "$var"
-  # 終了時刻と経過時間の計算
-  local end_time=$(date +%s)
-  local elapsed_time=$((end_time - start_time))
-  # 日、時間、分、秒に変換
-  local days=$((elapsed_time / 86400))
-  local hours=$(( (elapsed_time % 86400) / 3600))
-  local minutes=$(( (elapsed_time % 3600) / 60))
-  local seconds=$((elapsed_time % 60))
-  # 経過時間とディレクトリ情報を含めてSlackに通知
-  notify_slack "[$current_dir] $var finished! (Duration: ${days}d ${hours}h ${minutes}m ${seconds}s)"
+  notify_slack "[$current_dir] $var finished!"
 }
 
 nvistat() {
