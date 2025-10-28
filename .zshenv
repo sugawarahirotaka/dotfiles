@@ -2,3 +2,5 @@ export PATH="/opt/local/libexec/gnubin:/usr/local/bin:/opt/local/bin:/opt/local/
 if [[ "$(hostname)" == "v102" ]]; then
     export PATH="/usr/local/cuda/bin:$PATH"
 fi
+# ユーザがローカルにインストールしたコマンド（uv, pipxなど）
+export PATH="$HOME/.local/bin:$PATH"
