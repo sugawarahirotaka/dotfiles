@@ -291,8 +291,11 @@ restore-nvim() {
   fi
 }
 
+<<<<<<< HEAD
 # Created by `pipx` on 2025-07-14 09:08:57
 export PATH="$PATH:/Users/sugawara/.local/bin"
 
 # Added by Antigravity
 export PATH="/Users/sugawara/.antigravity/antigravity/bin:$PATH"
+=======
+>>>>>>> origin/main
