@@ -70,6 +70,8 @@ alias ez="emacs ~/.zshrc"
 alias py='python'
 # Git
 alias g='git'
+# uv
+alias up='uv run python'
 # quicklookのエイリアス
 alias ql="qlmanage -p"
 # lsのおすすめ設定
