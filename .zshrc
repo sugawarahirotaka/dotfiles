@@ -209,10 +209,10 @@ backup-nvim() {
   echo "  ~/.local/share/nvim => ~/.local/share/nvim.${timestamp}"
   echo "  ~/.local/state/nvim => ~/.local/state/nvim.${timestamp}"
   echo "  ~/.cache/nvim       => ~/.cache/nvim.${timestamp}"
- 
+
   # required
   mv ~/.config/nvim ~/.config/nvim.${timestamp}
- 
+
   # optional but recommended
   mv ~/.local/share/nvim ~/.local/share/nvim.${timestamp}
   mv ~/.local/state/nvim ~/.local/state/nvim.${timestamp}
@@ -290,12 +290,3 @@ restore-nvim() {
     mv $backup_cache  ~/.cache/nvim
   fi
 }
-
-<<<<<<< HEAD
-# Created by `pipx` on 2025-07-14 09:08:57
-export PATH="$PATH:/Users/sugawara/.local/bin"
-
-# Added by Antigravity
-export PATH="/Users/sugawara/.antigravity/antigravity/bin:$PATH"
-=======
->>>>>>> origin/main
