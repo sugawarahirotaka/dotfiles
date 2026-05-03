@@ -22,6 +22,23 @@ EXCLUDE_PATTERNS=(
   ".zshrc.oroshi*"
 )
 
+sync_git_submodules() {
+  if [[ ! -f "$DOTFILES_DIR/.gitmodules" ]]; then
+    return 0
+  fi
+
+  if ! command -v git >/dev/null 2>&1; then
+    echo "[warn] git command not found; skip submodule sync"
+    return 0
+  fi
+
+  echo "[submodule] sync urls"
+  git -C "$DOTFILES_DIR" submodule sync --recursive
+
+  echo "[submodule] update/init"
+  git -C "$DOTFILES_DIR" submodule update --init --recursive
+}
+
 is_excluded() {
   local name="$1"
   local ex
@@ -81,6 +98,8 @@ confirm_replace() {
 
   [[ "$answer" =~ ^[Yy]$ ]]
 }
+
+sync_git_submodules
 
 while IFS= read -r -d '' src; do
   name="${src:t}"
