@@ -18,7 +18,6 @@ EXCLUDES=(
 
 # 配布対象にしたくないものをパターン除外
 EXCLUDE_PATTERNS=(
-  ".zshrc.v*"
   ".zshrc.oroshi*"
 )
 
