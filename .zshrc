@@ -180,7 +180,12 @@ nvistat() {
 }
 
 # コマンド入力のサジェスト
+# 全角を含む履歴候補は、IME入力中に二重入力のように見えるため候補から除外する
+ZSH_AUTOSUGGEST_HISTORY_IGNORE='*[![:ascii:]]*'
 source $HOME/dotfiles/zsh-autosuggestions/zsh-autosuggestions.zsh
+# zsh-autosuggestions と組み合わせると CJK の unknown-token が二重描画されるため無効化
+typeset -gA ZSH_HIGHLIGHT_STYLES
+ZSH_HIGHLIGHT_STYLES[unknown-token]=default
 # macair コマンドの候補に色付け
 source $HOME/dotfiles/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
