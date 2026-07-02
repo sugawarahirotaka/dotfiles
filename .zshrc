@@ -61,6 +61,9 @@ WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
 fignore=(.o .aux .log .bbl .blg .lof .lot .toc \~)
 # emacsのエイリアス
 alias emacs="/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs -nw"
+# Obsidian
+alias obsidian='/Applications/Obsidian.app/Contents/MacOS/Obsidian'
+alias obs='/Applications/Obsidian.app/Contents/MacOS/Obsidian'
 # .zshrcのエイリアス
 alias sz="source ~/.zshrc"
 alias ez="emacs ~/.zshrc"
