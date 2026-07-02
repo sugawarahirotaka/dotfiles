@@ -11,6 +11,7 @@ EXCLUDES=(
   ".."
   ".git"
   ".gitignore"
+  ".zcompdump"
   "deploy.sh"
   "README.md"
   ".DS_Store"
