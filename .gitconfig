@@ -1,0 +1,17 @@
+[user]
+	email = sugawara@fun.bio.keio.ac.jp
+	name = Hirotaka Sugawara
+[color]
+	ui = true
+[http]
+	sslverify = false
+[push]
+	default = simple
+[alias]
+	lgb = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset%n' --abbrev-commit --date=relative --branches
+[core]
+	# editor = /Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs -nw
+	# 日本語ファイル名を git status で \347... のようにエスケープせず表示するため
+	quotepath = false
+[init]
+	defaultBranch = main
