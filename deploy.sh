@@ -37,6 +37,7 @@ CONFIG_LINKS=(
   "kitty"
   "lf"
   "nvim"
+  "sheldon"
   "zsh"
 )
 

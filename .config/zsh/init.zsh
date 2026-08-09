@@ -14,6 +14,7 @@ for dotfiles_zsh_module in \
   functions/pdf.zsh \
   functions/nvim.zsh \
   integrations.zsh \
+  plugin-settings.zsh \
   plugins.zsh
 do
   builtin source "$DOTFILES_ZSH_DIR/$dotfiles_zsh_module"

@@ -1,6 +1,12 @@
-ZSH_AUTOSUGGEST_HISTORY_IGNORE='*[![:ascii:]]*'
-builtin source "$DOTFILES_ROOT/zsh-autosuggestions/zsh-autosuggestions.zsh"
+if (( $+commands[sheldon] )); then
+  eval "$(sheldon source)"
+else
+  # Sheldon導入前やネットワーク障害時の移行用フォールバック。
+  if [[ -r "$DOTFILES_ROOT/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+    builtin source "$DOTFILES_ROOT/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  fi
 
-typeset -gA ZSH_HIGHLIGHT_STYLES
-ZSH_HIGHLIGHT_STYLES[unknown-token]=default
-builtin source "$DOTFILES_ROOT/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  if [[ -r "$DOTFILES_ROOT/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+    builtin source "$DOTFILES_ROOT/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  fi
+fi
