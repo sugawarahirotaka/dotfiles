@@ -1,4 +1,4 @@
 # 💤 LazyVim
 
-A starter template for [LazyVim](https://github.com/LazyVim/LazyVim).
-Refer to the [documentation](https://lazyvim.github.io/installation) to get started.
+[LazyVim](https://github.com/LazyVim/LazyVim) のスターターテンプレートです。
+利用を始めるには、[公式ドキュメント](https://lazyvim.github.io/installation) を参照してください。
