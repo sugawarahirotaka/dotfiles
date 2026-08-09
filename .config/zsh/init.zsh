@@ -8,12 +8,12 @@ for dotfiles_zsh_module in \
   keybindings.zsh \
   aliases.zsh \
   directories.zsh \
-  prompt.zsh \
   functions/notification.zsh \
   functions/nvidia.zsh \
   functions/pdf.zsh \
   functions/nvim.zsh \
   integrations.zsh \
+  prompt.zsh \
   plugin-settings.zsh \
   plugins.zsh
 do

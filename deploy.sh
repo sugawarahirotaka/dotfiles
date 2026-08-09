@@ -38,6 +38,7 @@ CONFIG_LINKS=(
   "lf"
   "nvim"
   "sheldon"
+  "starship.toml"
   "zsh"
 )
 

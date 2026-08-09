@@ -1,0 +1,43 @@
+"$schema" = "https://starship.rs/config-schema.json"
+
+add_newline = false
+format = "$python$conda$hostname:$directory$git_branch$git_status$character"
+
+[line_break]
+disabled = true
+
+[hostname]
+ssh_only = false
+trim_at = "."
+format = "[$hostname]($style)"
+style = "green"
+
+[directory]
+truncation_length = 100
+truncate_to_repo = false
+format = "[$path]($style)"
+style = "cyan"
+
+[git_branch]
+symbol = "git:"
+format = " [$symbol$branch]($style)"
+style = "purple"
+
+[git_status]
+format = " [$all_status$ahead_behind]($style)"
+style = "yellow"
+
+[python]
+symbol = ""
+format = '[(\($virtualenv\) )]($style)'
+style = "yellow"
+
+[conda]
+symbol = ""
+ignore_base = false
+format = '[(\($environment\) )]($style)'
+style = "yellow"
+
+[character]
+success_symbol = "[ >](bold green)"
+error_symbol = "[ >](bold red)"
