@@ -44,6 +44,7 @@ CONFIG_LINKS=(
   "kitty"
   "lf"
   "nvim"
+  "zsh"
 )
 
 sync_git_submodules() {

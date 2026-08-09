@@ -1,0 +1,10 @@
+alias emacs="/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs -nw"
+alias obs='obsidian'
+alias sz='source ~/.zshrc'
+alias ez='emacs ~/.zshrc'
+alias py='python'
+alias g='git'
+alias up='uv run python'
+alias ql='qlmanage -p'
+alias ls='/bin/ls -GF'
+alias remake='make clean && make'

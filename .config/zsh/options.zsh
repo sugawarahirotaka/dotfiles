@@ -1,0 +1,15 @@
+setopt autoresume
+setopt IGNORE_EOF
+setopt CORRECT
+setopt SHARE_HISTORY
+setopt HIST_REDUCE_BLANKS
+setopt HIST_IGNORE_SPACE
+setopt menu_complete
+setopt numeric_glob_sort
+setopt AUTO_PUSHD
+setopt PUSHD_IGNORE_DUPS
+setopt globdots
+setopt PROMPT_SUBST
+
+unsetopt auto_remove_slash
+unsetopt nomatch
