@@ -1,7 +1,6 @@
 WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
 fignore=(.o .aux .log .bbl .blg .lof .lot .toc \~)
 
-export DISPLAY=:0
 export HISTFILE="$HOME/.zsh_history"
 export SAVEHIST=100000
 export HISTSIZE=2000

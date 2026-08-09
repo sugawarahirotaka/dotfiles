@@ -33,7 +33,6 @@ show_virtual_env() {
 precmd() {
   if [[ "$HOST" == "dhcp145.fun.bio.keio.ac.jp" || "$HOST" == "Sugawara-MacBook-Air.local" ]]; then
     git_prompt_air
-    export JAVA_HOME="$(/usr/libexec/java_home)"
   else
     git_prompt_other
   fi

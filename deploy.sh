@@ -26,13 +26,6 @@ HOME_LINKS=(
   ".zprofile"
   ".zshenv"
   ".zshrc"
-  ".zshrc.v101"
-  ".zshrc.v103"
-  ".zshrc.v104"
-  ".zshrc.v105"
-  ".zshrc.v106"
-  ".zshrc.v107"
-  ".zshrc.v108"
   "codex-remote-toggle.sh"
 )
 
