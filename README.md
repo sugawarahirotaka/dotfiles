@@ -50,6 +50,8 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 ├── docs/
 │   ├── aliases.md                 # エイリアス一覧
 │   └── usage.md                   # 利用例
+├── scripts/
+│   └── check-zsh.zsh              # Zsh設定のスモークテスト
 ├── .zshenv                        # 全Zshで必要なPATH・ロケール
 ├── .zprofile                      # ログインシェル用
 ├── .zshrc                         # private設定とinit.zshの読み込み
@@ -124,6 +126,14 @@ Slack通知を使う場合だけ、`SLACK_WEBHOOK_URL` を設定してくださ�
 
 ```zsh
 exec zsh
+```
+
+## 検証
+
+構文、シンボリックリンク配置、対話シェル起動、主要なエイリアスと関数、任意ツール未導入時のフォールバックを一括で確認できます。実際のprivate設定と履歴ファイルは読み書きしません。
+
+```zsh
+./scripts/check-zsh.zsh
 ```
 
 ## 更新
