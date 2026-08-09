@@ -1,4 +1,6 @@
-source $HOME/dotfiles/.zshrc.private
+if [[ -r "$HOME/.zshrc.private" ]]; then
+  source "$HOME/.zshrc.private"
+fi
 autoload -U compinit
 autoload history-search-end
 autoload -Uz colors

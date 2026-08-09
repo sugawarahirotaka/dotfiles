@@ -5,21 +5,45 @@ IFS=$'\n\t'
 
 SCRIPT_PATH="${(%):-%N}"
 DOTFILES_DIR="${SCRIPT_PATH:A:h}"
+TARGET_HOME="${DOTFILES_TARGET_HOME:-$HOME}"
 
-EXCLUDES=(
-  "."
-  ".."
-  ".git"
-  ".gitignore"
-  ".zcompdump"
-  "deploy.sh"
-  "README.md"
-  ".DS_Store"
+if [[ -z "$TARGET_HOME" || "$TARGET_HOME" == "/" ]]; then
+  echo "[error] invalid deploy target: $TARGET_HOME" >&2
+  exit 1
+fi
+
+TARGET_HOME="${TARGET_HOME:A}"
+
+# ホーム直下へ配置するファイル・ディレクトリ。
+# リポジトリ直下を一括処理せず、意図したものだけを配布する。
+HOME_LINKS=(
+  ".gitconfig"
+  ".hammerspoon"
+  ".latexmkrc"
+  ".npmrc"
+  ".tmux.conf"
+  ".yatexrc"
+  ".zprofile"
+  ".zshenv"
+  ".zshrc"
+  ".zshrc.v101"
+  ".zshrc.v103"
+  ".zshrc.v104"
+  ".zshrc.v105"
+  ".zshrc.v106"
+  ".zshrc.v107"
+  ".zshrc.v108"
+  "codex-remote-toggle.sh"
 )
 
-# 配布対象にしたくないものをパターン除外
-EXCLUDE_PATTERNS=(
-  ".zshrc.oroshi*"
+# ~/.config 全体ではなく、管理対象のサブディレクトリだけを配置する。
+CONFIG_LINKS=(
+  "ctpv"
+  "htop"
+  "karabiner"
+  "kitty"
+  "lf"
+  "nvim"
 )
 
 sync_git_submodules() {
@@ -39,29 +63,12 @@ sync_git_submodules() {
   git -C "$DOTFILES_DIR" submodule update --init --recursive
 }
 
-is_excluded() {
-  local name="$1"
-  local ex
-
-  for ex in "${EXCLUDES[@]}"; do
-    [[ "$name" == "$ex" ]] && return 0
-  done
-
-  for ex in "${EXCLUDE_PATTERNS[@]}"; do
-    [[ "$name" == ${~ex} ]] && return 0
-  done
-
-  return 1
-}
-
 resolve_realpath() {
   local path="$1"
   local dir target
   local -i hops=0
 
   [[ -z "$path" ]] && return 1
-
-  # 相対パスなら絶対化
   [[ "$path" != /* ]] && path="$PWD/$path"
 
   while [[ -L "$path" ]]; do
@@ -99,31 +106,28 @@ confirm_replace() {
   [[ "$answer" =~ ^[Yy]$ ]]
 }
 
-sync_git_submodules
+link_item() {
+  local src="$1"
+  local dst="$2"
+  local src_path src_real link_target dst_dir dst_real backup
 
-while IFS= read -r -d '' src; do
-  name="${src:t}"
-
-  if is_excluded "$name"; then
-    continue
+  if [[ ! -e "$src" && ! -L "$src" ]]; then
+    echo "[skip] source not found: $src"
+    return 0
   fi
 
   src_path="${src:A}"
-  dst="$HOME/$name"
 
-  # 同じ文字列パスなら何もしない
   if [[ "$src_path" == "$dst" ]]; then
     echo "[skip] source and destination are literally the same path: $src_path"
-    continue
+    return 0
   fi
 
-  # source が壊れたリンクならスキップ
   if ! src_real="$(resolve_realpath "$src" 2>/dev/null)"; then
     echo "[skip] source is broken or cyclic symlink: $src"
-    continue
+    return 0
   fi
 
-  # 既に正しいリンクなら何もしない
   if [[ -L "$dst" ]]; then
     link_target="$(readlink "$dst")" || link_target=""
 
@@ -133,22 +137,20 @@ while IFS= read -r -d '' src; do
         link_target="$dst_dir/$link_target"
       fi
 
-      if dst_real="$(resolve_realpath "$link_target" 2>/dev/null)"; then
-        if [[ "$dst_real" == "$src_real" ]]; then
-          echo "[ok] already linked: $dst -> $link_target"
-          continue
-        fi
+      if dst_real="$(resolve_realpath "$link_target" 2>/dev/null)" \
+        && [[ "$dst_real" == "$src_real" ]]; then
+        echo "[ok] already linked: $dst -> $link_target"
+        return 0
       fi
     fi
 
     echo "[warn] destination is a broken or different symlink: $dst"
   fi
 
-  # 既存ファイル/ディレクトリ/リンクは確認して退避
   if [[ -e "$dst" || -L "$dst" ]]; then
     if ! confirm_replace "$dst"; then
       echo "[skip] keep existing: $dst"
-      continue
+      return 0
     fi
 
     backup="$dst.bak.$(date +%Y%m%d%H%M%S)"
@@ -156,7 +158,27 @@ while IFS= read -r -d '' src; do
     echo "[backup] $dst -> $backup"
   fi
 
+  mkdir -p -- "${dst:h}"
   ln -s -- "$src_path" "$dst"
   echo "[linked] $dst -> $src_path"
+}
 
-done < <(find "$DOTFILES_DIR" -mindepth 1 -maxdepth 1 -print0)
+main() {
+  local name
+
+  if [[ "${DOTFILES_SKIP_SUBMODULES:-0}" == "1" ]]; then
+    echo "[submodule] skipped by DOTFILES_SKIP_SUBMODULES=1"
+  else
+    sync_git_submodules
+  fi
+
+  for name in "${HOME_LINKS[@]}"; do
+    link_item "$DOTFILES_DIR/$name" "$TARGET_HOME/$name"
+  done
+
+  for name in "${CONFIG_LINKS[@]}"; do
+    link_item "$DOTFILES_DIR/.config/$name" "$TARGET_HOME/.config/$name"
+  done
+}
+
+main "$@"

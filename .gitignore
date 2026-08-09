@@ -6,3 +6,6 @@
 .config/qiita-cli/
 .config/karabiner/automatic_backups/
 .config/GPy
+.config/configstore/
+.config/gh/
+/nvim.log

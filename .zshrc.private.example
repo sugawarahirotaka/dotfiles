@@ -1,0 +1,4 @@
+# このファイルを ~/.zshrc.private にコピーし、権限を 600 にしてください。
+# 秘密情報を含む実ファイルはGitへ追加しません。
+
+# export SLACK_WEBHOOK_URL='https://hooks.slack.com/services/...'
