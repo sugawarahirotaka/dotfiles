@@ -42,23 +42,6 @@ CONFIG_LINKS=(
   "zsh"
 )
 
-sync_git_submodules() {
-  if [[ ! -f "$DOTFILES_DIR/.gitmodules" ]]; then
-    return 0
-  fi
-
-  if ! command -v git >/dev/null 2>&1; then
-    echo "[warn] git command not found; skip submodule sync"
-    return 0
-  fi
-
-  echo "[submodule] sync urls"
-  git -C "$DOTFILES_DIR" submodule sync --recursive
-
-  echo "[submodule] update/init"
-  git -C "$DOTFILES_DIR" submodule update --init --recursive
-}
-
 resolve_realpath() {
   local path="$1"
   local dir target
@@ -161,12 +144,6 @@ link_item() {
 
 main() {
   local name
-
-  if [[ "${DOTFILES_SKIP_SUBMODULES:-0}" == "1" ]]; then
-    echo "[submodule] skipped by DOTFILES_SKIP_SUBMODULES=1"
-  else
-    sync_git_submodules
-  fi
 
   for name in "${HOME_LINKS[@]}"; do
     link_item "$DOTFILES_DIR/$name" "$TARGET_HOME/$name"
