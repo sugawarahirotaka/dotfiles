@@ -23,7 +23,9 @@ fail() {
 
 typeset -a syntax_files
 typeset syntax_file required_link link_path expected_path
-typeset startup_output fallback_output starship_output starship_error_file
+typeset startup_output fallback_output starship_output starship_character
+typeset starship_prompt_character starship_error_file
+typeset -a starship_lines
 typeset sheldon_source_data_dir sheldon_source_config_dir
 typeset sheldon_test_data_dir sheldon_lock_text
 typeset host_fixture_dir host_output
@@ -199,8 +201,24 @@ if (( $+commands[starship] )); then
 
   [[ ! -s "$starship_error_file" ]] \
     || fail "Starshipがエラーを出力しました: $(< "$starship_error_file")"
-  [[ "$starship_output" != *$'\n'* ]] \
-    || fail "Starshipプロンプトが複数行です"
+
+  starship_lines=("${(@f)starship_output}")
+  (( ${#starship_lines} == 2 )) \
+    || fail "Starshipプロンプトが2行ではありません"
+
+  starship_character="$(
+    STARSHIP_CONFIG="$REPOSITORY_ROOT/.config/starship.toml" \
+    STARSHIP_CACHE="$DOTFILES_TEST_ROOT/starship-cache" \
+    TERM=xterm-256color \
+      starship module character 2>> "$starship_error_file"
+  )" || fail "Starshipの入力記号を生成できません"
+
+  starship_prompt_character="${starship_lines[2]//\%\{/}"
+  starship_prompt_character="${starship_prompt_character//\%\}/}"
+  [[ "$starship_prompt_character" == "$starship_character" ]] \
+    || fail "Starshipプロンプトの2行目が入力記号だけではありません"
+  [[ ! -s "$starship_error_file" ]] \
+    || fail "Starshipがエラーを出力しました: $(< "$starship_error_file")"
 fi
 
 print -r -- "[成功] Zsh設定のスモークテストに合格しました"

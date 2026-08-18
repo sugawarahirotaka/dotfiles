@@ -1,43 +1,78 @@
 "$schema" = "https://starship.rs/config-schema.json"
 
 add_newline = false
-format = "$python$conda$hostname:$directory$git_branch$git_status$character"
+format = """
+$os\
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_state\
+$git_status\
+$python\
+$conda\
+$all\
+$fill\
+$cmd_duration\
+$time\
+$line_break\
+$character"""
 
-[line_break]
-disabled = true
+[os]
+disabled = false
+format = "[$symbol]($style)"
+
+[username]
+show_always = true
+format = "[$user@]($style)"
+style_user = "bold yellow"
+style_root = "bold red"
 
 [hostname]
 ssh_only = false
 trim_at = "."
-format = "[$hostname]($style)"
-style = "green"
+format = "[$hostname ]($style)"
+style = "bold green"
 
 [directory]
-truncation_length = 100
+truncation_length = 4
 truncate_to_repo = false
-format = "[$path]($style)"
-style = "cyan"
+read_only = " 󰌾"
+format = "[$path$read_only]($style) "
+style = "bold cyan"
 
 [git_branch]
-symbol = "git:"
-format = " [$symbol$branch]($style)"
-style = "purple"
+symbol = " "
+format = "[$symbol$branch]($style) "
+style = "bold purple"
 
 [git_status]
-format = " [$all_status$ahead_behind]($style)"
+format = "([$all_status$ahead_behind]($style) )"
 style = "yellow"
 
 [python]
-symbol = ""
-format = '[(\($virtualenv\) )]($style)'
+format = "[${symbol}${pyenv_prefix}(${version} )(\\($virtualenv\\) )]($style)"
 style = "yellow"
 
 [conda]
-symbol = ""
 ignore_base = false
-format = '[(\($environment\) )]($style)'
-style = "yellow"
+format = "[$symbol$environment]($style) "
+style = "green"
+
+[fill]
+symbol = " "
+
+[cmd_duration]
+min_time = 1_000
+format = "[took $duration]($style) "
+
+[time]
+disabled = false
+time_format = "%H:%M"
+format = "[$time]($style)"
+style = "dimmed white"
 
 [character]
-success_symbol = "[ >](bold green)"
-error_symbol = "[ >](bold red)"
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
