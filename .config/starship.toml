@@ -11,6 +11,7 @@ $git_state\
 $git_status\
 $python\
 $conda\
+${env_var.CUDA_VISIBLE_DEVICES}\
 $all\
 $fill\
 $cmd_duration\
@@ -68,6 +69,12 @@ style = "yellow"
 ignore_base = false
 format = "[$symbol$environment]($style) "
 style = "green"
+
+[env_var.CUDA_VISIBLE_DEVICES]
+variable = "CUDA_VISIBLE_DEVICES"
+format = "[GPU $env_value]($style) "
+style = "bold bright-purple"
+description = "使用対象として選択されているCUDA GPU"
 
 [fill]
 symbol = " "

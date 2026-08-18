@@ -24,7 +24,7 @@ fail() {
 typeset -a syntax_files
 typeset syntax_file required_link link_path expected_path
 typeset startup_output fallback_output starship_output starship_character
-typeset starship_prompt_character starship_error_file
+typeset starship_prompt_character starship_gpu_output starship_error_file
 typeset -a starship_lines
 typeset sheldon_source_data_dir sheldon_source_config_dir
 typeset sheldon_test_data_dir sheldon_lock_text
@@ -217,6 +217,27 @@ if (( $+commands[starship] )); then
   starship_prompt_character="${starship_prompt_character//\%\}/}"
   [[ "$starship_prompt_character" == "$starship_character" ]] \
     || fail "Starshipプロンプトの2行目が入力記号だけではありません"
+
+  starship_gpu_output="$(
+    CUDA_VISIBLE_DEVICES=2,3 \
+    STARSHIP_CONFIG="$REPOSITORY_ROOT/.config/starship.toml" \
+    STARSHIP_CACHE="$DOTFILES_TEST_ROOT/starship-cache" \
+    TERM=xterm-256color \
+      starship module env_var.CUDA_VISIBLE_DEVICES 2>> "$starship_error_file"
+  )" || fail "StarshipのCUDA GPU表示を生成できません"
+  [[ "$starship_gpu_output" == *"GPU 2,3"* ]] \
+    || fail "CUDA_VISIBLE_DEVICESの値がStarshipへ表示されません"
+
+  starship_gpu_output="$(
+    unset CUDA_VISIBLE_DEVICES
+    STARSHIP_CONFIG="$REPOSITORY_ROOT/.config/starship.toml" \
+    STARSHIP_CACHE="$DOTFILES_TEST_ROOT/starship-cache" \
+    TERM=xterm-256color \
+      starship module env_var.CUDA_VISIBLE_DEVICES 2>> "$starship_error_file"
+  )" || fail "CUDA GPU未選択時のStarship表示を生成できません"
+  [[ -z "$starship_gpu_output" ]] \
+    || fail "CUDA_VISIBLE_DEVICESの未設定時にもGPU番号が表示されます"
+
   [[ ! -s "$starship_error_file" ]] \
     || fail "Starshipがエラーを出力しました: $(< "$starship_error_file")"
 fi
