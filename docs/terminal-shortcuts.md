@@ -112,10 +112,71 @@ tmux attach-session -t vservers
 接続後に`Ctrl-q`、`S`で同期入力を有効にし、全サーバーで同じコマンドを実行する。
 
 ```zsh
-cd ~/dotfiles && git fetch --prune && git merge --ff-only '@{u}'
+cd ~/dotfiles &&
+  git fetch --prune &&
+  git merge --ff-only '@{u}' &&
+  ./deploy.sh &&
+  { ! command -v sheldon >/dev/null || sheldon lock; } &&
+  exec zsh
 ```
 
+既存のシンボリックリンクが正しければ、マージしたファイルはリンク先へそのまま反映されるため、`deploy.sh`は毎回の更新に必須ではない。
+それでも、新しい配布対象が追加された場合やリンクが欠けている場合に備え、定型手順ではマージ後に実行する。
+
+`plugins.toml`が変わった場合は、`sheldon lock`がプラグインのロック情報を更新する。
+Sheldonが入っていないホストでも一括操作を止めないよう、コマンドの存在を確認してから実行する。
+
+Zshの設定ファイルは起動時に読み込むため、最後の`exec zsh`で現在のシェルへ反映する。
+`.zprofile`を変更した場合は、`exec zsh`ではなく`exec zsh -l`でログインシェルを起動し直す。
+
+`deploy.sh`が既存ファイルの置き換えを質問した場合は、ホストごとに状態が異なる可能性がある。
+その場で`Ctrl-q`、`S`を押して同期入力を解除し、各ペインの対象ファイルとバックアップ先を確認してから回答する。
+
 処理が終わったら、`Ctrl-q`、`S`で同期入力を解除する。
+
+## private設定を追加する
+
+`~/.zshrc.private`は、Webhookやホストごとの秘密値を置くGit管理外のファイルである。
+`git merge`と`deploy.sh`は、この実ファイルを作成、更新しない。
+
+ファイルがないホストでは、次のコマンドで見本から作成する。
+
+```zsh
+if [[ ! -e ~/.zshrc.private ]]; then
+  cp ~/dotfiles/.zshrc.private.example ~/.zshrc.private
+  chmod 600 ~/.zshrc.private
+fi
+```
+
+このコマンドは既存ファイルを上書きしないため、8ペインへの同期入力でも実行できる。
+作成後の秘密値は、同期入力を解除してから各ホストで編集する。
+コマンドラインへ秘密値を書くとシェル履歴へ残るため、エディターを使う。
+
+```zsh
+${EDITOR:-vi} ~/.zshrc.private
+exec zsh
+```
+
+新しいprivate変数をdotfilesの機能から参照する場合は、次の二つを分けて更新する。
+
+1. `.zshrc.private.example`へ、値を伏せたコメント例を追加する。
+2. 各ホストの`~/.zshrc.private`へ、実際の値を手動で追加する。
+
+秘密ではなく、v101からv108で共通に使う設定はprivateへ重複して書かない。
+その場合は、Git管理される`hosts/lab-server.zsh`や他のZshモジュールへ追加すると、通常のマージで全ホストへ配布できる。
+
+## 設定ファイル別の再読み込み
+
+更新したファイルによって、現在のセッションへ反映するコマンドが異なる。
+
+| 変更対象 | 反映方法 |
+| --- | --- |
+| `.zshrc`、`.zshenv`、`.config/zsh/` | `exec zsh` |
+| `.zprofile` | `exec zsh -l` |
+| `.config/sheldon/plugins.toml` | `sheldon lock`の後に`exec zsh` |
+| `.tmux.conf` | `tmux source-file ~/.tmux.conf` |
+| `.config/kitty/kitty.conf` | macOS側のKittyで`Ctrl-Shift-F5` |
+| 新しい配布対象、欠けたリンク | `./deploy.sh` |
 
 ## Kittyとtmuxを同時に使う場合
 
