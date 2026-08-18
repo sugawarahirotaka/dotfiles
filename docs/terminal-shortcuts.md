@@ -134,6 +134,76 @@ Zshの設定ファイルは起動時に読み込むため、最後の`exec zsh`�
 
 処理が終わったら、`Ctrl-q`、`S`で同期入力を解除する。
 
+## StarshipとSheldonを8台へ導入する
+
+StarshipとSheldonは、公式GitHubリポジトリを各ホストの`~/.local/src`へcloneしてビルドする。
+v101〜v108にはRustとCargoが入っていないため、初回だけ公式rustupを導入する。
+
+同期入力を有効にし、次のコマンドを実行する。
+
+```zsh
+if [[ -r "$HOME/.cargo/env" ]]; then
+  source "$HOME/.cargo/env"
+fi
+
+if ! command -v rustup >/dev/null; then
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+    sh -s -- -y --profile minimal --no-modify-path
+  source "$HOME/.cargo/env"
+fi
+
+rustup update stable
+mkdir -p "$HOME/.local/src" "$HOME/.local/bin"
+
+if [[ ! -d "$HOME/.local/src/starship/.git" ]]; then
+  git clone https://github.com/starship/starship.git \
+    "$HOME/.local/src/starship"
+fi
+git -C "$HOME/.local/src/starship" pull --ff-only
+cargo build --release --locked \
+  --manifest-path "$HOME/.local/src/starship/Cargo.toml"
+ln -sfn "$HOME/.local/src/starship/target/release/starship" \
+  "$HOME/.local/bin/starship"
+
+if [[ ! -d "$HOME/.local/src/sheldon/.git" ]]; then
+  git clone https://github.com/rossmacarthur/sheldon.git \
+    "$HOME/.local/src/sheldon"
+fi
+git -C "$HOME/.local/src/sheldon" pull --ff-only
+cargo build --release --locked \
+  --manifest-path "$HOME/.local/src/sheldon/Cargo.toml"
+ln -sfn "$HOME/.local/src/sheldon/target/release/sheldon" \
+  "$HOME/.local/bin/sheldon"
+
+starship --version
+sheldon --version
+```
+
+8台で同時にRustをビルドするため、完了まで時間がかかる。
+いずれかのペインでエラーが出た場合は同期入力を解除し、そのホストのログを個別に確認する。
+
+## StarshipとSheldonを更新する
+
+clone済みの公式ソースは、pullと再ビルドで更新する。
+同期入力を有効にして次を実行する。
+
+```zsh
+source "$HOME/.cargo/env"
+rustup update stable
+
+git -C "$HOME/.local/src/starship" pull --ff-only &&
+  cargo build --release --locked \
+    --manifest-path "$HOME/.local/src/starship/Cargo.toml" &&
+  git -C "$HOME/.local/src/sheldon" pull --ff-only &&
+  cargo build --release --locked \
+    --manifest-path "$HOME/.local/src/sheldon/Cargo.toml" &&
+  starship --version &&
+  sheldon --version
+```
+
+ビルド後も`~/.local/bin`のシンボリックリンクは同じ場所を指すため、作り直す必要はない。
+更新が終わったら`Ctrl-q`、`S`で同期入力を解除する。
+
 ## private設定を追加する
 
 `~/.zshrc.private`は、Webhookやホストごとの秘密値を置くGit管理外のファイルである。
@@ -174,6 +244,7 @@ exec zsh
 | `.zshrc`、`.zshenv`、`.config/zsh/` | `exec zsh` |
 | `.zprofile` | `exec zsh -l` |
 | `.config/sheldon/plugins.toml` | `sheldon lock`の後に`exec zsh` |
+| Starship、Sheldon本体 | 公式cloneをpullして`cargo build --release --locked` |
 | `.tmux.conf` | `tmux source-file ~/.tmux.conf` |
 | `.config/kitty/kitty.conf` | macOS側のKittyで`Ctrl-Shift-F5` |
 | 新しい配布対象、欠けたリンク | `./deploy.sh` |
@@ -190,3 +261,6 @@ SSH接続を再利用したい場合や処理を接続後も残したい場合�
 
 - [Kittyの既定ショートカット](https://sw.kovidgoyal.net/kitty/overview/)
 - [Kittyの設定](https://sw.kovidgoyal.net/kitty/conf/)
+- [Starship公式ソース](https://github.com/starship/starship)
+- [Sheldon公式ソース](https://github.com/rossmacarthur/sheldon)
+- [Sheldonのソースビルド手順](https://sheldon.cli.rs/Installation.html#building-from-source)

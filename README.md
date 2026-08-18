@@ -8,7 +8,7 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 
 - `.zshrc` はローダーだけにし、設定を機能別ファイルへ分割
 - Sheldonで `zsh-autosuggestions` と `zsh-syntax-highlighting` を管理
-- Starshipでホスト名、ディレクトリ、Git、仮想環境を1行表示
+- Starshipで作業コンテキストと入力欄を分けた2行プロンプトを表示
 - macOS、研究室サーバー、ホスト固有設定を分離
 - private設定と一部の不要なアプリ生成物をGit管理から除外
 - 配布対象を許可リストで限定し、既存ファイルは確認後にバックアップ
@@ -72,7 +72,8 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 
 `zsh-syntax-highlighting` が他のZLE設定より後になるよう、Sheldonは最後のプラグイン初期化として配置しています。
 
-Starshipは「プロンプトを1行で表示」する設定です。初期化処理を `.zshrc` の1行目へ置く意味ではありません。環境変数やホスト設定を反映できるよう、各モジュールの後で初期化しています。
+Starshipは、1行目にホスト名、ディレクトリ、Git、開発環境を表示し、2行目を入力欄として使います。
+初期化処理は、環境変数やホスト設定を反映できるよう、各モジュールの後で実行します。
 
 ## セットアップ
 
@@ -85,23 +86,64 @@ cd ~/dotfiles
 
 ### 2. StarshipとSheldonを導入
 
-MacPortsではStarshipをインストールできます。
+StarshipとSheldonは、公式GitHubリポジトリを`~/.local/src`へcloneし、Cargoでビルドします。
+生成した実行ファイルは、PATHに含まれる`~/.local/bin`から参照します。
+
+ビルドにはGit、Rust、Cargo、Cコンパイラが必要です。
+2026年8月18日時点の公式ソースは、StarshipがRust 1.95以上、SheldonがRust 1.90.0以上を要求します。
+v101〜v108にはRustとCargoが入っていないため、最初に公式rustupでstableツールチェーンを導入します。
 
 ```zsh
-sudo port install starship
+if [[ -r "$HOME/.cargo/env" ]]; then
+  source "$HOME/.cargo/env"
+fi
+
+if ! command -v rustup >/dev/null; then
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+    sh -s -- -y --profile minimal --no-modify-path
+  source "$HOME/.cargo/env"
+fi
+
+rustup update stable
+mkdir -p "$HOME/.local/src" "$HOME/.local/bin"
 ```
 
-SheldonはHomebrewまたはCargoの公式配布に対応しています。
+Starshipを公式ソースからビルドします。
 
 ```zsh
-# Homebrewを使う場合
-brew install sheldon
+if [[ ! -d "$HOME/.local/src/starship/.git" ]]; then
+  git clone https://github.com/starship/starship.git \
+    "$HOME/.local/src/starship"
+fi
 
-# Cargoを使い、~/.local/binへ入れる場合
-cargo install sheldon --locked --root "$HOME/.local"
+git -C "$HOME/.local/src/starship" pull --ff-only
+cargo build --release --locked \
+  --manifest-path "$HOME/.local/src/starship/Cargo.toml"
+ln -sfn "$HOME/.local/src/starship/target/release/starship" \
+  "$HOME/.local/bin/starship"
 ```
 
-Sheldon 0.8.5はRust 1.81以上を必要とします。古いRustを使っている場合は、先に利用中のパッケージマネージャーでRust/Cargoを更新してください。
+Sheldonも同じ配置方針でビルドします。
+
+```zsh
+if [[ ! -d "$HOME/.local/src/sheldon/.git" ]]; then
+  git clone https://github.com/rossmacarthur/sheldon.git \
+    "$HOME/.local/src/sheldon"
+fi
+
+git -C "$HOME/.local/src/sheldon" pull --ff-only
+cargo build --release --locked \
+  --manifest-path "$HOME/.local/src/sheldon/Cargo.toml"
+ln -sfn "$HOME/.local/src/sheldon/target/release/sheldon" \
+  "$HOME/.local/bin/sheldon"
+```
+
+導入した実行ファイルを確認します。
+
+```zsh
+starship --version
+sheldon --version
+```
 
 StarshipまたはSheldonが未導入でもZshは起動します。Starshipがない場合は基本プロンプトへフォールバックし、Sheldonがない場合はSheldon管理プラグインを読み込みません。
 
@@ -139,12 +181,36 @@ exec zsh
 
 ## 更新
 
+dotfilesを更新します。
+
 ```zsh
 cd ~/dotfiles
-git pull
+git pull --ff-only
 ./deploy.sh
 sheldon lock --update
+exec zsh
 ```
+
+StarshipとSheldon自体を更新する場合は、公式cloneをpullして再ビルドします。
+実行ファイルへのシンボリックリンクはそのまま利用できます。
+
+```zsh
+source "$HOME/.cargo/env"
+rustup update stable
+
+git -C "$HOME/.local/src/starship" pull --ff-only
+cargo build --release --locked \
+  --manifest-path "$HOME/.local/src/starship/Cargo.toml"
+
+git -C "$HOME/.local/src/sheldon" pull --ff-only
+cargo build --release --locked \
+  --manifest-path "$HOME/.local/src/sheldon/Cargo.toml"
+
+starship --version
+sheldon --version
+```
+
+公式ソースは[starship/starship](https://github.com/starship/starship)と[rossmacarthur/sheldon](https://github.com/rossmacarthur/sheldon)を使用します。
 
 ## ホスト固有設定
 
