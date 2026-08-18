@@ -202,6 +202,12 @@ if (( $+commands[starship] )); then
   [[ ! -s "$starship_error_file" ]] \
     || fail "Starshipがエラーを出力しました: $(< "$starship_error_file")"
 
+  [[ "$starship_output" == $'\n'* ]] \
+    || fail "直前の出力とStarshipプロンプトの間に空行がありません"
+  starship_output="${starship_output#$'\n'}"
+  [[ "$starship_output" != $'\n'* ]] \
+    || fail "Starshipプロンプトの前に空行が複数あります"
+
   starship_lines=("${(@f)starship_output}")
   (( ${#starship_lines} == 2 )) \
     || fail "Starshipプロンプトが2行ではありません"
