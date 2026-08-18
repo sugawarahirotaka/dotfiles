@@ -49,6 +49,7 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 │   └── nvim/                      # Neovim設定
 ├── docs/
 │   ├── aliases.md                 # エイリアス一覧
+│   ├── terminal-shortcuts.md      # Kitty・tmuxのショートカット
 │   └── usage.md                   # 利用例
 ├── scripts/
 │   └── check-zsh.zsh              # Zsh設定のスモークテスト
@@ -156,4 +157,5 @@ sheldon lock --update
 ## 詳細
 
 - [エイリアス一覧](docs/aliases.md)
+- [Kittyとtmuxのショートカット](docs/terminal-shortcuts.md)
 - [便利な使い方](docs/usage.md)
