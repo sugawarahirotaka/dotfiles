@@ -37,7 +37,7 @@ style = "bold green"
 
 [directory]
 truncation_length = 4
-truncate_to_repo = false
+truncate_to_repo = true
 read_only = " 󰌾"
 format = "[$path$read_only]($style) "
 style = "bold cyan"
