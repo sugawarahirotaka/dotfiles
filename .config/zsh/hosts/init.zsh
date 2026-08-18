@@ -6,7 +6,7 @@ if [[ "$OSTYPE" == darwin* ]]; then
 fi
 
 case "$dotfiles_short_host" in
-  v101|v103|v104|v105|v106|v107|v108)
+  v10[1-8])
     builtin source "$DOTFILES_ZSH_DIR/hosts/lab-server.zsh"
     dotfiles_host_is_managed=1
     ;;

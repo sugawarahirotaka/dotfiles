@@ -1,7 +1,10 @@
 export PATH="/opt/local/libexec/gnubin:/usr/local/bin:/opt/local/bin:/opt/local/sbin:/usr/local/lib:/usr/sbin:$PATH"
-if [[ "${HOST%%.*}" == "v102" && -d /usr/local/cuda/bin ]]; then
+
+# CUDA Toolkitの導入状況はホストごとに異なるため、標準パスの存在で判定する。
+if [[ -d /usr/local/cuda/bin ]]; then
     export PATH="/usr/local/cuda/bin:$PATH"
 fi
+
 # ユーザがローカルにインストールしたコマンド（uv, pipxなど）
 export PATH="$HOME/.local/bin:$PATH"
 

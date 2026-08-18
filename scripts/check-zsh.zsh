@@ -26,6 +26,7 @@ typeset syntax_file required_link link_path expected_path
 typeset startup_output fallback_output starship_output starship_error_file
 typeset sheldon_source_data_dir sheldon_source_config_dir
 typeset sheldon_test_data_dir sheldon_lock_text
+typeset host_fixture_dir host_output
 syntax_files=(
   "$REPOSITORY_ROOT/.zshenv"
   "$REPOSITORY_ROOT/.zprofile"
@@ -63,6 +64,36 @@ for required_link in "${required_links[@]}"; do
   [[ "${link_path:A}" == "${expected_path:A}" ]] \
     || fail "リンク先が一致しません: $required_link"
 done
+
+host_fixture_dir="$DOTFILES_TEST_ROOT/host-fixture"
+mkdir -p -- "$host_fixture_dir/hosts"
+print -r -- 'typeset -g DOTFILES_TEST_HOST_PROFILE=macos' \
+  > "$host_fixture_dir/hosts/macos.zsh"
+print -r -- 'typeset -g DOTFILES_TEST_HOST_PROFILE=lab-server' \
+  > "$host_fixture_dir/hosts/lab-server.zsh"
+
+host_output="$(
+  ZDOTDIR="$DOTFILES_TEST_ROOT/empty-zdotdir" \
+    /bin/zsh -dfc '
+      setopt ERR_EXIT NO_UNSET PIPE_FAIL
+      typeset test_host
+
+      DOTFILES_ZSH_DIR="$1"
+      for test_host in v101 v102 v103 v104 v105 v106 v107 v108; do
+        HOST="$test_host"
+        unset DOTFILES_TEST_HOST_PROFILE
+        builtin source "$2"
+        [[ "$DOTFILES_TEST_HOST_PROFILE" == lab-server ]]
+      done
+
+      print -r -- dotfiles-zsh-hosts-ok
+    ' dotfiles-check \
+      "$host_fixture_dir" \
+      "$REPOSITORY_ROOT/.config/zsh/hosts/init.zsh" 2>&1
+)" || fail "研究室サーバーのホスト振り分けが動作しません"
+
+[[ "$host_output" == dotfiles-zsh-hosts-ok ]] \
+  || fail "ホスト振り分けの検査で予期しない出力があります: $host_output"
 
 mkdir -p -- "$DOTFILES_TEST_ROOT/starship-cache"
 

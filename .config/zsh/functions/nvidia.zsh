@@ -2,7 +2,7 @@ nvistat() {
   local -a servers
   local server
 
-  servers=("v102" "v103" "v104" "v105" "v106" "v107" "v108")
+  servers=("v101" "v102" "v103" "v104" "v105" "v106" "v107" "v108")
   for server in "${servers[@]}"; do
     echo "${fg_bold[green]}$server${reset_color}:"
     ssh -x "$server" \
