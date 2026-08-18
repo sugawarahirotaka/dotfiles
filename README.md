@@ -20,7 +20,7 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 ├── .config/
 │   ├── sheldon/
 │   │   └── plugins.toml          # Zshプラグイン定義
-│   ├── starship.toml             # 1行プロンプト設定
+│   ├── starship.toml             # 2行プロンプト設定
 │   ├── zsh/
 │   │   ├── init.zsh              # モジュールの読み込み順
 │   │   ├── core.zsh              # colorsなどの基本初期化
