@@ -2,7 +2,7 @@
 
 macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定は機能別に分割し、プラグインをSheldon、プロンプトをStarshipで管理します。
 
-構成の考え方は [nometoko/dotfiles](https://github.com/nometoko/dotfiles) を参考にしています。読み込み順は暗黙のglobにせず、`.config/zsh/init.zsh` へ明示しています。
+読み込み順は暗黙のglobにせず、`.config/zsh/init.zsh` へ明示しています。
 
 ## 主な特徴
 
