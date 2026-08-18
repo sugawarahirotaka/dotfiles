@@ -77,7 +77,7 @@ long-running-command; done-notify
 nvistat
 ```
 
-v102〜v108へSSH接続し、GPU名、GPU使用率、メモリ使用率を一覧表示します。SSH設定と各サーバー上の `nvidia-smi` が必要です。
+v101〜v108へSSH接続し、GPU名、GPU使用率、メモリ使用率を一覧表示します。SSH設定と各サーバー上の `nvidia-smi` が必要です。
 
 ## PDFを圧縮する
 

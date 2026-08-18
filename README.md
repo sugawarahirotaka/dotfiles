@@ -41,7 +41,7 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 │   │   │   └── nvim.zsh          # Neovimバックアップ・復元
 │   │   └── hosts/
 │   │       ├── init.zsh           # ホスト振り分け
-│   │       ├── lab-server.zsh     # v101、v103〜v108共通
+│   │       ├── lab-server.zsh     # v101〜v108共通
 │   │       ├── macos.zsh          # JAVA_HOME、DISPLAY
 │   │       └── oroshi1.zsh        # oroshi1固有
 │   ├── kitty/                     # Kitty設定
@@ -147,8 +147,8 @@ sheldon lock --update
 
 ## ホスト固有設定
 
-- v101、v103〜v108: `hosts/lab-server.zsh`
-- v102: `.zshenv` でCUDAのPATHを設定
+- v101〜v108: `hosts/lab-server.zsh`
+- CUDA Toolkit: `/usr/local/cuda/bin` が存在する場合だけ `.zshenv` でPATHへ追加
 - oroshi1: `hosts/oroshi1.zsh`
 - macOS共通: `hosts/macos.zsh`
 - その他の未管理ホスト: 互換用に `~/.zshrc.$HOST` があれば読み込み

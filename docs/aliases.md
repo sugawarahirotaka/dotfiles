@@ -6,7 +6,7 @@
 
 | エイリアス | 展開先 | 用途・注意 |
 | --- | --- | --- |
-| `emacs` | MacPorts版Emacsのターミナル起動 | v101、v103〜v108、oroshi1ではホスト設定で上書き |
+| `emacs` | MacPorts版Emacsのターミナル起動 | v101〜v108、oroshi1ではホスト設定で上書き |
 | `obs` | `obsidian` | Obsidian公式CLIの短縮。Obsidianアプリの起動が必要 |
 | `sz` | `source ~/.zshrc` | Zsh設定を現在のシェルへ再読み込み |
 | `ez` | `emacs ~/.zshrc` | Zshの入口ファイルを編集 |
