@@ -43,7 +43,7 @@ format = "[$path$read_only]($style) "
 style = "bold cyan"
 
 [git_branch]
-symbol = " "
+symbol = "git:"
 format = "[$symbol$branch]($style) "
 style = "bold purple"
 
