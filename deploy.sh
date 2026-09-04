@@ -6,6 +6,36 @@ IFS=$'\n\t'
 SCRIPT_PATH="${(%):-%N}"
 DOTFILES_DIR="${SCRIPT_PATH:A:h}"
 TARGET_HOME="${DOTFILES_TARGET_HOME:-$HOME}"
+DRY_RUN=0
+NON_INTERACTIVE=0
+SKILL_ARGS=()
+
+usage() {
+  echo "usage: ${0:t} [--dry-run] [--non-interactive]" >&2
+}
+
+while (( $# > 0 )); do
+  case "$1" in
+    --dry-run)
+      DRY_RUN=1
+      SKILL_ARGS+=("--dry-run")
+      ;;
+    --non-interactive)
+      NON_INTERACTIVE=1
+      SKILL_ARGS+=("--non-interactive")
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      echo "[error] unknown option: $1" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
 
 if [[ -z "$TARGET_HOME" || "$TARGET_HOME" == "/" ]]; then
   echo "[error] invalid deploy target: $TARGET_HOME" >&2
@@ -43,33 +73,38 @@ CONFIG_LINKS=(
 )
 
 resolve_realpath() {
-  local path="$1"
+  local candidate="$1"
   local dir target
   local -i hops=0
 
-  [[ -z "$path" ]] && return 1
-  [[ "$path" != /* ]] && path="$PWD/$path"
+  [[ -z "$candidate" ]] && return 1
+  [[ "$candidate" != /* ]] && candidate="$PWD/$candidate"
 
-  while [[ -L "$path" ]]; do
+  while [[ -L "$candidate" ]]; do
     (( hops += 1 ))
     (( hops > 40 )) && return 1
 
-    target="$(readlink "$path")" || return 1
+    target="$(readlink "$candidate")" || return 1
     if [[ "$target" == /* ]]; then
-      path="$target"
+      candidate="$target"
     else
-      dir="${path:h}"
-      path="$dir/$target"
+      dir="${candidate:h}"
+      candidate="$dir/$target"
     fi
   done
 
-  [[ -e "$path" ]] || return 1
-  printf '%s\n' "${path:A}"
+  [[ -e "$candidate" ]] || return 1
+  printf '%s\n' "${candidate:A}"
 }
 
 confirm_replace() {
   local dst="$1"
   local answer
+
+  if (( NON_INTERACTIVE )); then
+    echo "[skip] non-interactive mode keeps existing: $dst"
+    return 1
+  fi
 
   if [[ -r /dev/tty ]]; then
     printf "'%s' already exists. Move to backup and replace? [y/N]: " "$dst" > /dev/tty
@@ -127,6 +162,11 @@ link_item() {
   fi
 
   if [[ -e "$dst" || -L "$dst" ]]; then
+    if (( DRY_RUN )); then
+      echo "[dry-run] would require backup before linking: $dst"
+      return 0
+    fi
+
     if ! confirm_replace "$dst"; then
       echo "[skip] keep existing: $dst"
       return 0
@@ -135,6 +175,11 @@ link_item() {
     backup="$dst.bak.$(date +%Y%m%d%H%M%S)"
     mv -- "$dst" "$backup"
     echo "[backup] $dst -> $backup"
+  fi
+
+  if (( DRY_RUN )); then
+    echo "[dry-run] would link: $dst -> $src_path"
+    return 0
   fi
 
   mkdir -p -- "${dst:h}"
@@ -152,6 +197,9 @@ main() {
   for name in "${CONFIG_LINKS[@]}"; do
     link_item "$DOTFILES_DIR/.config/$name" "$TARGET_HOME/.config/$name"
   done
+
+  link_item "$DOTFILES_DIR/.codex/AGENTS.md" "$TARGET_HOME/.codex/AGENTS.md"
+  "$DOTFILES_DIR/scripts/deploy-codex-skills.zsh" "${SKILL_ARGS[@]}"
 }
 
 main "$@"

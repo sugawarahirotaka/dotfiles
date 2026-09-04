@@ -9,3 +9,8 @@
 .config/configstore/
 .config/gh/
 /nvim.log
+.codex/skills/**/.venv/
+.codex/skills/**/.pytest_cache/
+.codex/skills/**/__pycache__/
+.codex/skills/**/.mypy_cache/
+.codex/skills/**/.ruff_cache/

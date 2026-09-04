@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "repository": {
+    "url": "https://github.com/sugawarahirotaka/dotfiles",
+    "visibility": "public",
+    "verified_at": "2026-09-04",
+    "license": "UNLICENSED"
+  },
+  "discovery": {
+    "active_user_root": "~/.codex/skills",
+    "official_current_user_root": "~/.agents/skills",
+    "compatibility_policy": "Keep per-skill links in ~/.codex/skills while this Codex desktop environment continues to discover that location.",
+    "excluded_paths": [
+      "~/.codex/skills/.system",
+      "~/.codex/skills/codex-primary-runtime",
+      "~/.codex/plugins/cache"
+    ],
+    "cache_only_observations": [
+      {
+        "plugin_id": "openai-templates",
+        "version": "0.1.1",
+        "skill_count": 20,
+        "reason": "Skill files exist in plugin cache but were not exposed in the current available-skill list; cache is not an installation source of truth."
+      },
+      {
+        "plugin_id": "github",
+        "version": "0.1.6",
+        "skill_count": 4,
+        "reason": "An older skill-bearing cache coexists with an app-only remote plugin; neither skill set was exposed in the current available-skill list."
+      }
+    ]
+  },
+  "plugins": [
+    {
+      "id": "browser",
+      "install_id": "browser",
+      "marketplace": "OpenAI bundled",
+      "version": "26.825.51511",
+      "license": "Proprietary",
+      "dependencies": [],
+      "permissions": ["Interactive browser access", "Read browser content", "Write through browser interactions"],
+      "reinstall": "Bundled with Codex desktop. Update or reinstall Codex; do not restore the plugin cache."
+    },
+    {
+      "id": "chrome",
+      "install_id": "chrome",
+      "marketplace": "OpenAI bundled",
+      "version": "26.825.51511",
+      "license": "Proprietary",
+      "dependencies": ["ChatGPT Chrome extension", "User-authorized Chrome sessions"],
+      "permissions": ["Interactive Chrome access", "Read tabs and signed-in page content"],
+      "reinstall": "Open the desktop Plugins tab, install Chrome, and grant the requested browser-extension permissions; Codex CLI users can open /plugins."
+    },
+    {
+      "id": "computer-use",
+      "install_id": "computer-use",
+      "marketplace": "OpenAI bundled",
+      "version": "1.0.1000919",
+      "license": "Proprietary",
+      "dependencies": ["Bundled computer-use MCP launcher", "macOS Accessibility and Screen Recording permissions"],
+      "permissions": ["Control authorized Mac apps", "Capture authorized screen content"],
+      "reinstall": "Open the desktop Plugins tab, install Computer Use, and grant the requested macOS permissions."
+    },
+    {
+      "id": "sites",
+      "install_id": "sites",
+      "marketplace": "OpenAI bundled",
+      "version": "0.1.46",
+      "license": "Proprietary",
+      "dependencies": ["Sites app connector connector_20205bf7d4e99a89d7154bb849718324"],
+      "permissions": ["Interactive", "Write and deploy Sites projects"],
+      "reinstall": "Open the desktop Plugins tab and install Sites; Codex CLI users can open /plugins."
+    },
+    {
+      "id": "visualize",
+      "install_id": "visualize",
+      "marketplace": "OpenAI bundled",
+      "version": "1.0.23",
+      "license": "Proprietary",
+      "dependencies": ["Codex visualization runtime"],
+      "permissions": ["Interactive", "Read", "Write conversation visualizations"],
+      "reinstall": "Bundled with Codex desktop. Update or reinstall Codex; do not restore the plugin cache."
+    },
+    {
+      "id": "deep-research-work",
+      "install_id": "plugin_connector_1p_ae06492f57648191bd558c9c45188734",
+      "marketplace": "OpenAI curated remote",
+      "version": "0.1.14",
+      "license": "Proprietary",
+      "dependencies": ["Required app connector connector_openai_deep_research_work"],
+      "permissions": ["Interactive", "Read", "Write"],
+      "reinstall": "Open the desktop Plugins tab, search for Deep Research, and install it; Codex CLI users can open /plugins."
+    },
+    {
+      "id": "notion",
+      "install_id": "plugin_asdk_app_69c18c28f1188191bf5b8445c4ab0a2e",
+      "marketplace": "OpenAI curated remote",
+      "version": "0.1.8",
+      "license": "MIT",
+      "dependencies": ["Required Notion app asdk_app_69c18c28f1188191bf5b8445c4ab0a2e", "Notion MCP https://mcp.notion.com/mcp", "Notion OAuth"],
+      "permissions": ["Interactive", "Read Notion workspace", "Write authorized Notion content"],
+      "reinstall": "Open the desktop Plugins tab, search for Notion, install it, and complete OAuth; Codex CLI users can open /plugins."
+    },
+    {
+      "id": "plugin-management",
+      "install_id": "plugin_connector_1p_b3438d6beb9081918fba3625bc988128",
+      "marketplace": "OpenAI curated remote",
+      "version": "0.1.0",
+      "license": "Proprietary",
+      "dependencies": ["Required app connector connector_openai_plugin_management"],
+      "permissions": ["Inspect plugin dependencies and permissions", "Suggest plugins", "Manage authorized plugin state"],
+      "reinstall": "Open the desktop Plugins tab, search for Plugin Management, and install; Codex CLI users can open /plugins."
+    },
+    {
+      "id": "documents",
+      "install_id": "documents",
+      "marketplace": "OpenAI primary runtime",
+      "version": "26.903.11726",
+      "license": "MIT",
+      "dependencies": ["Codex bundled workspace dependency runtime"],
+      "permissions": ["Read and write local document artifacts"],
+      "reinstall": "Provided by the Codex primary runtime. Update or reinstall Codex; do not restore the runtime cache."
+    },
+    {
+      "id": "pdf",
+      "install_id": "pdf",
+      "marketplace": "OpenAI primary runtime",
+      "version": "26.903.11726",
+      "license": "MIT",
+      "dependencies": ["Codex bundled workspace dependency runtime"],
+      "permissions": ["Read and write local PDF artifacts"],
+      "reinstall": "Provided by the Codex primary runtime. Update or reinstall Codex; do not restore the runtime cache."
+    },
+    {
+      "id": "presentations",
+      "install_id": "presentations",
+      "marketplace": "OpenAI primary runtime",
+      "version": "26.903.11726",
+      "license": "MIT",
+      "dependencies": ["Codex bundled workspace dependency runtime", "@oai/artifact-tool"],
+      "permissions": ["Read and write local presentation artifacts"],
+      "reinstall": "Provided by the Codex primary runtime. Update or reinstall Codex; do not restore the runtime cache."
+    },
+    {
+      "id": "spreadsheets",
+      "install_id": "spreadsheets",
+      "marketplace": "OpenAI primary runtime",
+      "version": "26.903.11726",
+      "license": "MIT",
+      "dependencies": ["Codex bundled workspace dependency runtime", "Connected Documents app connector_openai_codex_document_control for Excel live control"],
+      "permissions": ["Read and write local spreadsheet artifacts", "Control an explicitly connected Excel workbook"],
+      "reinstall": "Provided by the Codex primary runtime. Update or reinstall Codex and reconnect Excel only when live control is needed."
+    },
+    {
+      "id": "template-creator",
+      "install_id": "template-creator",
+      "marketplace": "OpenAI primary runtime",
+      "version": "26.903.11726",
+      "license": "Proprietary",
+      "dependencies": ["Codex bundled workspace dependency runtime", "Source-specific apps when a cloud reference is used"],
+      "permissions": ["Read supplied references", "Write personal artifact templates"],
+      "reinstall": "Provided by the Codex primary runtime. Update or reinstall Codex; do not restore the runtime cache."
+    }
+  ],
+  "skills": [
+    {
+      "name": "codex-thread-links",
+      "kind": "owned",
+      "local_path": ".codex/skills/codex-thread-links",
+      "destination": "~/.codex/skills/codex-thread-links",
+      "upstream": "",
+      "version": "",
+      "plugin_id": "",
+      "license": "UNLICENSED",
+      "enabled": true,
+      "dependencies": ["Codex desktop thread tools when available", "Obsidian Markdown consumers"],
+      "notes": "User-authored durable thread reference policy."
+    },
+    {
+      "name": "create-sugawara-research-slides",
+      "kind": "owned",
+      "local_path": ".codex/skills/create-sugawara-research-slides",
+      "destination": "~/.codex/skills/create-sugawara-research-slides",
+      "upstream": "",
+      "version": "",
+      "plugin_id": "",
+      "license": "UNLICENSED",
+      "enabled": true,
+      "dependencies": ["presentations plugin skill", "@oai/artifact-tool", "Bundled Sugawara PPTX template"],
+      "notes": "User-authored research presentation style and asset."
+    },
+    {
+      "name": "daily-neruwa",
+      "kind": "owned",
+      "local_path": ".codex/skills/daily-neruwa",
+      "destination": "~/.codex/skills/daily-neruwa",
+      "upstream": "local snapshot of former standalone repository",
+      "version": "84c76d4bbc9cd18c6b899779ffe616e488bd79f5",
+      "plugin_id": "",
+      "license": "UNLICENSED",
+      "enabled": true,
+      "dependencies": ["uv", "Python >=3.11", "/Users/sugawara/.local/bin/obsidian", "Obsidian_vault", "codex-session-memory", "codex-thread-links", "obsidian-markdown"],
+      "notes": "Imported from a clean working tree with git archive; standalone Git history intentionally omitted."
+    },
+    {
+      "name": "manage-codex-skills",
+      "kind": "owned",
+      "local_path": ".codex/skills/manage-codex-skills",
+      "destination": "~/.codex/skills/manage-codex-skills",
+      "upstream": "",
+      "version": "",
+      "plugin_id": "",
+      "license": "UNLICENSED",
+      "enabled": true,
+      "dependencies": ["scripts/deploy-codex-skills.zsh", "scripts/check-codex-skills.zsh", "scripts/finalize-codex-skill.zsh"],
+      "notes": "Canonical workflow for all future Codex skill lifecycle changes."
+    },
+    {
+      "name": "personal-dev-defaults",
+      "kind": "owned",
+      "local_path": ".codex/skills/personal-dev-defaults",
+      "destination": "~/.codex/skills/personal-dev-defaults",
+      "upstream": "",
+      "version": "",
+      "plugin_id": "",
+      "license": "UNLICENSED",
+      "enabled": true,
+      "dependencies": ["Repository-native development tooling", "uv when no stronger Python convention exists"],
+      "notes": "User-authored personal development defaults."
+    },
+    {
+      "name": "write-readable-japanese",
+      "kind": "owned",
+      "local_path": ".codex/skills/write-readable-japanese",
+      "destination": "~/.codex/skills/write-readable-japanese",
+      "upstream": "",
+      "version": "",
+      "plugin_id": "",
+      "license": "UNLICENSED",
+      "enabled": true,
+      "dependencies": [],
+      "notes": "User-authored Japanese technical writing policy."
+    },
+    {
+      "name": "obsidian-cli",
+      "kind": "vendored",
+      "local_path": ".codex/skills/obsidian-cli",
+      "destination": "~/.codex/skills/obsidian-cli",
+      "upstream": "https://github.com/kepano/obsidian-skills",
+      "version": "a1dc48e68138490d522c04cbf5822214c6eb1202",
+      "plugin_id": "",
+      "license": "MIT",
+      "enabled": true,
+      "dependencies": ["Obsidian desktop app", "Obsidian CLI"],
+      "notes": "Exact upstream snapshot plus local provenance and license metadata."
+    },
+    {
+      "name": "obsidian-markdown",
+      "kind": "vendored",
+      "local_path": ".codex/skills/obsidian-markdown",
+      "destination": "~/.codex/skills/obsidian-markdown",
+      "upstream": "https://github.com/kepano/obsidian-skills",
+      "version": "a1dc48e68138490d522c04cbf5822214c6eb1202",
+      "plugin_id": "",
+      "license": "MIT",
+      "enabled": true,
+      "dependencies": [],
+      "notes": "Exact upstream snapshot plus local provenance and license metadata."
+    },
+    {
+      "name": "codex-session-memory",
+      "kind": "project",
+      "local_path": "/Users/sugawara/Library/Mobile Documents/iCloud~md~obsidian/Documents/Obsidian_vault/.codex/skills/codex-session-memory",
+      "destination": "~/.codex/skills/codex-session-memory",
+      "upstream": "Obsidian_vault",
+      "version": "",
+      "plugin_id": "",
+      "license": "UNLICENSED",
+      "enabled": true,
+      "dependencies": ["Obsidian_vault", "Obsidian CLI", "codex-thread-links"],
+      "notes": "The Obsidian vault remains the source of truth; preserve the existing symlink."
+    },
+    {"name": "imagegen", "kind": "system", "local_path": "~/.codex/skills/.system/imagegen", "destination": "", "upstream": "OpenAI Codex", "version": "managed", "plugin_id": "", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Do not copy or modify."},
+    {"name": "openai-docs", "kind": "system", "local_path": "~/.codex/skills/.system/openai-docs", "destination": "", "upstream": "OpenAI Codex", "version": "managed", "plugin_id": "", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Do not copy or modify."},
+    {"name": "plugin-creator", "kind": "system", "local_path": "~/.codex/skills/.system/plugin-creator", "destination": "", "upstream": "OpenAI Codex", "version": "managed", "plugin_id": "", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Do not copy or modify."},
+    {"name": "review-agent", "kind": "system", "local_path": "~/.codex/skills/.system/review-agent", "destination": "", "upstream": "OpenAI Codex", "version": "managed", "plugin_id": "", "license": "Proprietary", "enabled": false, "dependencies": [], "notes": "Present in .system but not exposed in the current available-skill list."},
+    {"name": "skill-creator", "kind": "system", "local_path": "~/.codex/skills/.system/skill-creator", "destination": "", "upstream": "OpenAI Codex", "version": "managed", "plugin_id": "", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Do not copy or modify."},
+    {"name": "skill-installer", "kind": "system", "local_path": "~/.codex/skills/.system/skill-installer", "destination": "", "upstream": "OpenAI Codex", "version": "managed", "plugin_id": "", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Do not copy or modify."},
+    {"name": "control-in-app-browser", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "26.825.51511", "plugin_id": "browser", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Reinstall the browser plugin, not its cache."},
+    {"name": "control-chrome", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "26.825.51511", "plugin_id": "chrome", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Reinstall the Chrome plugin and extension permissions."},
+    {"name": "computer-use", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "1.0.1000919", "plugin_id": "computer-use", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Requires its bundled MCP launcher and macOS permissions."},
+    {"name": "deep-research", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "0.1.14", "plugin_id": "deep-research-work", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Requires the Deep Research app connector."},
+    {"name": "documents", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI primary runtime", "version": "26.903.11726", "plugin_id": "documents", "license": "MIT", "enabled": true, "dependencies": [], "notes": "Runtime-managed."},
+    {"name": "notion-knowledge-capture", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "0.1.8", "plugin_id": "notion", "license": "MIT", "enabled": true, "dependencies": [], "notes": "Requires the Notion app, MCP, OAuth, and authorized workspace permissions."},
+    {"name": "notion-meeting-intelligence", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "0.1.8", "plugin_id": "notion", "license": "MIT", "enabled": true, "dependencies": [], "notes": "Requires the Notion app, MCP, OAuth, and authorized workspace permissions."},
+    {"name": "notion-research-documentation", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "0.1.8", "plugin_id": "notion", "license": "MIT", "enabled": true, "dependencies": [], "notes": "Requires the Notion app, MCP, OAuth, and authorized workspace permissions."},
+    {"name": "notion-spec-to-implementation", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "0.1.8", "plugin_id": "notion", "license": "MIT", "enabled": true, "dependencies": [], "notes": "Requires the Notion app, MCP, OAuth, and authorized workspace permissions."},
+    {"name": "pdf", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI primary runtime", "version": "26.903.11726", "plugin_id": "pdf", "license": "MIT", "enabled": true, "dependencies": [], "notes": "Runtime-managed."},
+    {"name": "plugin-management", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "0.1.0", "plugin_id": "plugin-management", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Requires its app connector."},
+    {"name": "presentations", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI primary runtime", "version": "26.903.11726", "plugin_id": "presentations", "license": "MIT", "enabled": true, "dependencies": [], "notes": "Runtime-managed."},
+    {"name": "sites-building", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "0.1.46", "plugin_id": "sites", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Requires the Sites app connector."},
+    {"name": "sites-hosting", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "0.1.46", "plugin_id": "sites", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Requires the Sites app connector."},
+    {"name": "spreadsheets", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI primary runtime", "version": "26.903.11726", "plugin_id": "spreadsheets", "license": "MIT", "enabled": true, "dependencies": [], "notes": "Runtime-managed standalone spreadsheet skill."},
+    {"name": "excel-live-control", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI primary runtime", "version": "26.903.11726", "plugin_id": "spreadsheets", "license": "MIT", "enabled": true, "dependencies": [], "notes": "Requires a connected Excel workbook and add-in session."},
+    {"name": "template-creator", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI primary runtime", "version": "26.903.11726", "plugin_id": "template-creator", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Runtime-managed and may require source-specific apps."},
+    {"name": "visualize", "kind": "plugin", "local_path": "", "destination": "", "upstream": "OpenAI plugin directory", "version": "1.0.23", "plugin_id": "visualize", "license": "Proprietary", "enabled": true, "dependencies": [], "notes": "Uses the Codex visualization runtime."}
+  ]
+}

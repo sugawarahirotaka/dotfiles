@@ -1,0 +1,6 @@
+interface:
+  display_name: "Manage Codex Skills"
+  short_description: "Safely manage Codex skill lifecycle and provenance"
+  default_prompt: "Use $manage-codex-skills to add or change a Codex skill with registry, symlink, validation, and commit checks."
+policy:
+  allow_implicit_invocation: true
