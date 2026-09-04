@@ -1,0 +1,10 @@
+{
+  "upstream_url": "https://github.com/kepano/obsidian-skills",
+  "commit": "a1dc48e68138490d522c04cbf5822214c6eb1202",
+  "retrieved_at": "2026-09-04",
+  "license": "MIT",
+  "license_file": "LICENSE.upstream",
+  "snapshot_path": "skills/obsidian-cli",
+  "update_method": "Download or archive the recorded upstream commit, compare skills/obsidian-cli, replace the snapshot without .git or caches, then update this file and the registry in the same finalize commit.",
+  "local_changes": false
+}
