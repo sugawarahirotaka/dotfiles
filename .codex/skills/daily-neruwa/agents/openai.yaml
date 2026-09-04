@@ -1,0 +1,4 @@
+interface:
+  display_name: "Daily Neruwa"
+  short_description: "Capture daily Codex work in Obsidian"
+  default_prompt: "Use $daily-neruwa after I say 寝るわ to save Codex sessions and update my Obsidian Daily note."

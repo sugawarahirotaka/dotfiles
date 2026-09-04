@@ -1,0 +1,4 @@
+interface:
+  display_name: "読みやすい日本語技術文書"
+  short_description: "実験結果や技術説明を、論理の通る自然な日本語Markdownに整える"
+  default_prompt: "$write-readable-japanese を使って、この実験結果を論理の通る読みやすい日本語Markdownに直してください。"

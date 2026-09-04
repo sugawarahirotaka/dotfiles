@@ -1,0 +1,6 @@
+interface:
+  display_name: "Personal Dev Defaults"
+  short_description: "Defaults for implementation and concrete dev operations"
+  default_prompt: "Use $personal-dev-defaults for this implementation or developer-tooling task."
+policy:
+  allow_implicit_invocation: true

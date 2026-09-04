@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sugawara Research Slides"
+  short_description: "Create Sugawara-style research PPTX decks"
+  default_prompt: "Use $create-sugawara-research-slides to turn these research notes into a coherent 4:3 PPTX deck."
