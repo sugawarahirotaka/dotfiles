@@ -1,0 +1,10 @@
+{
+  "upstream_url": "https://github.com/tt-a1i/archify",
+  "commit": "d8e4daf2610d512821365f41b139d874b29efe81",
+  "retrieved_at": "2026-09-05",
+  "license": "MIT",
+  "license_file": "LICENSE",
+  "snapshot_path": "archify",
+  "update_method": "Download or archive the recorded upstream commit, compare archify, replace the snapshot without .git or caches, then update this file and the registry in the same finalize commit.",
+  "local_changes": false
+}

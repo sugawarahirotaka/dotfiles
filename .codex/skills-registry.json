@@ -242,6 +242,19 @@
       "notes": "User-authored Japanese technical writing policy."
     },
     {
+      "name": "archify",
+      "kind": "vendored",
+      "local_path": ".codex/skills/archify",
+      "destination": "~/.codex/skills/archify",
+      "upstream": "https://github.com/tt-a1i/archify",
+      "version": "d8e4daf2610d512821365f41b139d874b29efe81",
+      "plugin_id": "",
+      "license": "MIT",
+      "enabled": true,
+      "dependencies": ["Node.js >=18"],
+      "notes": "Exact upstream archify/ snapshot plus immutable provenance and bundled license metadata. Optional visual-check and export paths may require Playwright, Chromium, FFmpeg, or platform tools."
+    },
+    {
       "name": "obsidian-cli",
       "kind": "vendored",
       "local_path": ".codex/skills/obsidian-cli",
