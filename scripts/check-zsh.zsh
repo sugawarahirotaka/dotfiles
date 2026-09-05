@@ -145,6 +145,7 @@ startup_output="$(
       [[ "$(bindkey "^P")" == *history-beginning-search-backward-end* ]]
 
       (( ${+functions[done-notify]} ))
+      (( ${+functions[rm]} ))
       (( ${+functions[nvistat]} ))
       (( ${+functions[shrinkpdf]} ))
       (( ${+functions[backup-nvim]} ))
@@ -168,6 +169,24 @@ startup_output="$(
 
 [[ "$startup_output" == dotfiles-zsh-smoke-ok ]] \
   || fail "対話シェルの起動時に予期しない出力があります: $startup_output"
+
+mkdir -p -- "$DOTFILES_TEST_ROOT/trash-bin"
+print -rl -- '#!/bin/sh' \
+  'printf "%s\n" "$@"' \
+  > "$DOTFILES_TEST_ROOT/trash-bin/gio"
+chmod +x -- "$DOTFILES_TEST_ROOT/trash-bin/gio"
+
+trash_output="$(
+  PATH="$DOTFILES_TEST_ROOT/trash-bin:/usr/bin:/bin" \
+  DOTFILES_RM_PLATFORM=linux-gnu \
+    /bin/zsh -dfc '
+      builtin source "$1"
+      rm -rf -- "file one" directory
+    ' dotfiles-check "$REPOSITORY_ROOT/.config/zsh/functions/rm.zsh" 2>&1
+)" || fail "Linuxでrmをtrashへ置き換えられません"
+
+[[ "$trash_output" == $'trash\n--\n'"$REPOSITORY_ROOT"$'/file one\n'"$REPOSITORY_ROOT/directory" ]] \
+  || fail "rmからgio trashへの引数変換が正しくありません: $trash_output"
 
 mkdir -p -- "$DOTFILES_TEST_ROOT/empty-zdotdir"
 fallback_output="$(

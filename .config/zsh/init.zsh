@@ -8,6 +8,7 @@ for dotfiles_zsh_module in \
   keybindings.zsh \
   aliases.zsh \
   directories.zsh \
+  functions/rm.zsh \
   functions/notification.zsh \
   functions/nvidia.zsh \
   functions/pdf.zsh \
