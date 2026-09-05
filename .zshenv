@@ -8,6 +8,11 @@ fi
 # ユーザがローカルにインストールしたコマンド（uv, pipxなど）
 export PATH="$HOME/.local/bin:$PATH"
 
+# rustupがユーザ領域へ導入したRustとCargoを利用する。
+if [[ -r "$HOME/.cargo/env" ]]; then
+    source "$HOME/.cargo/env"
+fi
+
 # UTF-8 locale fallback for terminals that start zsh with LANG/LC_CTYPE unset.
 _dotfiles_locale_available() {
     local locale_name="$1"

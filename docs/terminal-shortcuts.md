@@ -170,7 +170,7 @@ if [[ ! -d "$HOME/.local/src/sheldon/.git" ]]; then
     "$HOME/.local/src/sheldon"
 fi
 git -C "$HOME/.local/src/sheldon" pull --ff-only
-cargo build --release --locked \
+cargo build --release --locked --features vendored \
   --manifest-path "$HOME/.local/src/sheldon/Cargo.toml"
 ln -sfn "$HOME/.local/src/sheldon/target/release/sheldon" \
   "$HOME/.local/bin/sheldon"
@@ -195,7 +195,7 @@ git -C "$HOME/.local/src/starship" pull --ff-only &&
   cargo build --release --locked \
     --manifest-path "$HOME/.local/src/starship/Cargo.toml" &&
   git -C "$HOME/.local/src/sheldon" pull --ff-only &&
-  cargo build --release --locked \
+  cargo build --release --locked --features vendored \
     --manifest-path "$HOME/.local/src/sheldon/Cargo.toml" &&
   starship --version &&
   sheldon --version

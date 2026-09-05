@@ -132,11 +132,13 @@ if [[ ! -d "$HOME/.local/src/sheldon/.git" ]]; then
 fi
 
 git -C "$HOME/.local/src/sheldon" pull --ff-only
-cargo build --release --locked \
+cargo build --release --locked --features vendored \
   --manifest-path "$HOME/.local/src/sheldon/Cargo.toml"
 ln -sfn "$HOME/.local/src/sheldon/target/release/sheldon" \
   "$HOME/.local/bin/sheldon"
 ```
+
+`vendored`機能によりOpenSSL、libgit2、curlもユーザー領域内でビルドするため、システムの開発用パッケージやsudo権限は不要です。
 
 導入した実行ファイルを確認します。
 
@@ -203,7 +205,7 @@ cargo build --release --locked \
   --manifest-path "$HOME/.local/src/starship/Cargo.toml"
 
 git -C "$HOME/.local/src/sheldon" pull --ff-only
-cargo build --release --locked \
+cargo build --release --locked --features vendored \
   --manifest-path "$HOME/.local/src/sheldon/Cargo.toml"
 
 starship --version
