@@ -1,0 +1,10 @@
+{
+  "upstream_url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+  "commit": "1e5eeffbdad3749125afe7ab48a39694e27f181c",
+  "retrieved_at": "2026-09-05",
+  "license": "MIT",
+  "license_file": "LICENSE.upstream",
+  "snapshot_path": "skills/scientific-visualization",
+  "update_method": "Download or archive the recorded upstream commit, compare skills/scientific-visualization, replace the snapshot without .git or caches, then update this file and the registry in the same finalize commit.",
+  "local_changes": false
+}

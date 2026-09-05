@@ -255,6 +255,19 @@
       "notes": "Exact upstream archify/ snapshot plus immutable provenance and bundled license metadata. Optional visual-check and export paths may require Playwright, Chromium, FFmpeg, or platform tools."
     },
     {
+      "name": "scientific-visualization",
+      "kind": "vendored",
+      "local_path": ".codex/skills/scientific-visualization",
+      "destination": "~/.codex/skills/scientific-visualization",
+      "upstream": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "version": "1e5eeffbdad3749125afe7ab48a39694e27f181c",
+      "plugin_id": "",
+      "license": "MIT",
+      "enabled": true,
+      "dependencies": ["Python >=3.11", "uv", "Matplotlib/Pillow/pypdf as needed", "Chrome or Chromium for Plotly Kaleido v1 static export"],
+      "notes": "Exact upstream skills/scientific-visualization snapshot plus immutable provenance and license metadata. Bundled CLIs are network-free."
+    },
+    {
       "name": "obsidian-cli",
       "kind": "vendored",
       "local_path": ".codex/skills/obsidian-cli",
