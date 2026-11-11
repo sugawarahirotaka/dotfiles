@@ -62,7 +62,8 @@
       "name": "manage-skills",
       "kind": "owned",
       "targets": [
-        "codex"
+        "codex",
+        "claude"
       ],
       "upstream": "",
       "version": "",
@@ -107,7 +108,8 @@
       "name": "archify",
       "kind": "vendored",
       "targets": [
-        "codex"
+        "codex",
+        "claude"
       ],
       "upstream": "https://github.com/tt-a1i/archify",
       "version": "d8e4daf2610d512821365f41b139d874b29efe81",
@@ -121,7 +123,8 @@
       "name": "obsidian-cli",
       "kind": "vendored",
       "targets": [
-        "codex"
+        "codex",
+        "claude"
       ],
       "upstream": "https://github.com/kepano/obsidian-skills",
       "version": "a1dc48e68138490d522c04cbf5822214c6eb1202",
@@ -149,7 +152,8 @@
       "name": "scientific-visualization",
       "kind": "vendored",
       "targets": [
-        "codex"
+        "codex",
+        "claude"
       ],
       "upstream": "https://github.com/K-Dense-AI/scientific-agent-skills",
       "version": "1e5eeffbdad3749125afe7ab48a39694e27f181c",
