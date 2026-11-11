@@ -16,6 +16,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -193,10 +194,16 @@ def quit_app() -> None:
 
 
 class CodexProcess:
-    def __init__(self, pid: str, tty: str, args: str) -> None:
+    def __init__(self, pid: str, ppid: str, tty: str, args: str, parent_args: str = "") -> None:
         self.pid = pid
+        self.ppid = ppid
         self.tty = tty
         self.args = args
+        self.parent_args = parent_args
+
+    @property
+    def in_terminal(self) -> bool:
+        return self.tty not in {"??", "?", "-", ""}
 
     @property
     def is_daemon(self) -> bool:
@@ -209,8 +216,11 @@ class CodexProcess:
         return " app-server daemon pid-update-loop" in self.args
 
     def __str__(self) -> str:
-        where = f"terminal {self.tty}" if self.tty not in {"??", "?", "-"} else "background"
-        return f"{self.pid} ({where}) {self.args[:160]}"
+        where = f"terminal {self.tty}" if self.in_terminal else "background"
+        text = f"{self.pid} ({where}) {self.args[:140]}"
+        if self.parent_args and not self.in_terminal:
+            text += f"\n      started by: {self.parent_args[:140]}"
+        return text
 
 
 def ps_column(column: str) -> Dict[str, str]:
@@ -222,36 +232,90 @@ def ps_column(column: str) -> Dict[str, str]:
     return table
 
 
+def process_table() -> List[Dict[str, str]]:
+    """Every process as {pid, ppid, uid, tty, comm, args}.
+
+    CODEX_ACCOUNT_PS_FIXTURE replaces `ps` with a JSON list for tests.
+    """
+    fixture = os.environ.get("CODEX_ACCOUNT_PS_FIXTURE")
+    if fixture:
+        return json.loads(Path(fixture).read_text())
+    columns = {name: ps_column(name) for name in ("ppid", "uid", "tty", "comm", "args")}
+    return [
+        {"pid": pid, **{name: table.get(pid, "") for name, table in columns.items()}}
+        for pid in columns["comm"]
+    ]
+
+
 def running_codex_processes() -> List[CodexProcess]:
-    if os.environ.get("CODEX_ACCOUNT_SKIP_APP_CONTROL") == "1":
+    """This user's Codex processes that may hold the login, except the daemon updater."""
+    if os.environ.get("CODEX_ACCOUNT_SKIP_APP_CONTROL") == "1" and not os.environ.get("CODEX_ACCOUNT_PS_FIXTURE"):
         return []
-    commands = ps_column("comm")
-    ttys = ps_column("tty")
-    args = ps_column("args")
+    table = process_table()
+    args_by_pid = {row["pid"]: row["args"] for row in table}
+    uid = str(os.getuid())
     found = []
-    for pid, command in commands.items():
-        name = os.path.basename(command)
-        if (name == "codex" or name.startswith("codex-")) and pid != str(os.getpid()):
-            process = CodexProcess(pid, ttys.get(pid, "?"), args.get(pid, command))
-            if not process.is_updater:
-                found.append(process)
+    for row in table:
+        name = os.path.basename(row["comm"])
+        if not (name == "codex" or name.startswith("codex-")):
+            continue
+        if row["uid"] != uid or row["pid"] == str(os.getpid()):
+            continue
+        process = CodexProcess(row["pid"], row["ppid"], row["tty"], row["args"] or row["comm"],
+                               args_by_pid.get(row["ppid"], ""))
+        if not process.is_updater:
+            found.append(process)
     return found
 
 
-def stop_daemon() -> None:
-    codex_bin = os.environ.get("CODEX_ACCOUNT_CODEX_BIN") or shutil.which("codex")
-    if not codex_bin:
-        raise AccountError("codex command not found; stop the app-server daemon manually")
-    subprocess.run([codex_bin, "app-server", "daemon", "stop"], capture_output=True)
-    for _ in range(100):
-        if not any(process.is_daemon for process in running_codex_processes()):
+def stop_background(processes: List[CodexProcess]) -> None:
+    """Stop background Codex servers: the managed daemon through its own command, others by SIGTERM."""
+    pids = {process.pid for process in processes}
+    fixture = os.environ.get("CODEX_ACCOUNT_PS_FIXTURE")
+    if fixture:
+        rows = [row for row in json.loads(Path(fixture).read_text()) if row["pid"] not in pids and row["ppid"] not in pids]
+        Path(fixture).write_text(json.dumps(rows))
+        return
+    if any(process.is_daemon for process in processes):
+        codex_bin = os.environ.get("CODEX_ACCOUNT_CODEX_BIN") or shutil.which("codex")
+        if codex_bin:
+            subprocess.run([codex_bin, "app-server", "daemon", "stop"], capture_output=True)
+    for process in processes:
+        if not process.is_daemon:
+            try:
+                os.kill(int(process.pid), signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+    for _ in range(50):
+        if not any(process.pid in pids for process in running_codex_processes()):
             return
-        time.sleep(0.1)
-    raise AccountError("the Codex app-server daemon did not stop; auth.json was not changed")
+        time.sleep(0.2)
+    raise AccountError("background Codex processes did not stop; auth.json was not changed")
 
 
 def describe_processes(processes: List[CodexProcess]) -> str:
     return "\n  ".join(str(process) for process in processes)
+
+
+def ensure_no_codex_running(args: argparse.Namespace) -> None:
+    """Refuse while a terminal session runs; offer to stop background servers."""
+    processes = running_codex_processes()
+    sessions = [process for process in processes if process.in_terminal]
+    if sessions:
+        raise AccountError(
+            "Codex sessions are still running in a terminal and may overwrite auth.json:\n  "
+            f"{describe_processes(sessions)}\nexit them (e.g. /quit) first, or pass --force"
+        )
+    background = [process for process in processes if not process.in_terminal]
+    if not background:
+        return
+    print("Background Codex processes hold the current login:\n  " + describe_processes(background), file=sys.stderr)
+    if not (args.yes or ask_yes_no("Stop them? Codex restarts them when needed.")):
+        raise AccountError("background Codex processes are running; auth.json was not changed")
+    stop_background(background)
+    remaining = running_codex_processes()
+    if remaining:
+        raise AccountError(f"Codex started again while switching:\n  {describe_processes(remaining)}")
 
 
 def command_list(args: argparse.Namespace) -> int:
@@ -347,22 +411,7 @@ def command_use(args: argparse.Namespace) -> int:
         reopen = not args.no_reopen
 
     if not args.force:
-        processes = running_codex_processes()
-        sessions = [process for process in processes if not process.is_daemon]
-        if sessions:
-            raise AccountError(
-                "Codex sessions are still running and may overwrite auth.json:\n  "
-                f"{describe_processes(sessions)}\nexit them (e.g. /quit in each terminal) first, or pass --force"
-            )
-        if any(process.is_daemon for process in processes):
-            if not (args.yes or ask_yes_no("Stop the Codex background server (app-server daemon)?")):
-                raise AccountError("the Codex app-server daemon is running; auth.json was not changed")
-            stop_daemon()
-            remaining = running_codex_processes()
-            if remaining:
-                raise AccountError(
-                    f"Codex started again while switching:\n  {describe_processes(remaining)}"
-                )
+        ensure_no_codex_running(args)
 
     # Read after quitting: the app may refresh tokens while shutting down.
     current = read_login(auth_file(home))

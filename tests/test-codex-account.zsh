@@ -119,6 +119,47 @@ else
   fail "use --force replaces an unsaved login"
 fi
 
+# Process checks: a fake `ps` table stands in for running Codex processes.
+export CODEX_ACCOUNT_PS_FIXTURE="$TEST_TMP/ps.json"
+MY_UID="$(id -u)"
+write_ps() {
+  python3 - "$CODEX_ACCOUNT_PS_FIXTURE" "$MY_UID" "$@" <<'PY'
+import json, sys
+path, uid, *specs = sys.argv[1:]
+rows = [{"pid": "1", "ppid": "0", "uid": "0", "tty": "??", "comm": "launchd", "args": "/sbin/launchd"}]
+for spec in specs:
+    pid, ppid, owner, tty, args = spec.split("|")
+    rows.append({"pid": pid, "ppid": ppid, "uid": uid if owner == "me" else "0",
+                 "tty": tty, "comm": args.split()[0], "args": args})
+open(path, "w").write(json.dumps(rows))
+PY
+}
+
+write_ps "200|1|other|ttys003|/usr/local/bin/codex"
+if run use personal >/dev/null && [[ "$(refresh_of "$CODEX_HOME/auth.json")" == r2 ]]; then
+  pass "another user's Codex process does not block switching"
+else
+  fail "another user's Codex process does not block switching"
+fi
+
+write_ps "300|1|me|ttys004|/usr/local/bin/codex"
+if ! run use lab --yes >/dev/null 2>&1 && [[ "$(refresh_of "$CODEX_HOME/auth.json")" == r2 ]]; then
+  pass "own terminal session blocks switching even with --yes"
+else
+  fail "own terminal session blocks switching even with --yes"
+fi
+
+write_ps "400|1|me|??|/usr/local/bin/codex app-server" "401|400|me|??|/usr/local/bin/codex-code-mode-host" \
+  "402|1|me|??|/opt/codex/bin/codex app-server daemon pid-update-loop"
+if run use lab --yes >/dev/null 2>&1 && [[ "$(refresh_of "$CODEX_HOME/auth.json")" == r9 ]] \
+  && [[ "$(cat "$CODEX_ACCOUNT_PS_FIXTURE")" != *'"400"'* && "$(cat "$CODEX_ACCOUNT_PS_FIXTURE")" != *'"401"'* ]] \
+  && [[ "$(cat "$CODEX_ACCOUNT_PS_FIXTURE")" == *'"402"'* ]]; then
+  pass "background servers are stopped and the updater is left alone"
+else
+  fail "background servers are stopped and the updater is left alone"
+fi
+unset CODEX_ACCOUNT_PS_FIXTURE
+
 if run remove personal >/dev/null && [[ ! -e "$CODEX_HOME/auth-profiles/personal.json" ]]; then
   pass "remove deletes a profile"
 else
