@@ -38,7 +38,8 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 │   │   │   ├── notification.zsh  # Slack通知
 │   │   │   ├── nvidia.zsh        # GPU利用状況
 │   │   │   ├── pdf.zsh           # PDF圧縮
-│   │   │   └── nvim.zsh          # Neovimバックアップ・復元
+│   │   │   ├── nvim.zsh          # Neovimバックアップ・復元
+│   │   │   └── codex.zsh         # Codexアカウント切り替え
 │   │   └── hosts/
 │   │       ├── init.zsh           # ホスト振り分け
 │   │       ├── lab-server.zsh     # v101〜v108共通
@@ -47,12 +48,22 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 │   ├── kitty/                     # Kitty設定
 │   ├── lf/                        # lf設定
 │   └── nvim/                      # Neovim設定
+├── agents/                        # CodexとClaude Codeで共有する設定
+│   ├── AGENTS.md                  # 全体指示（~/.codex/AGENTS.md と ~/.claude/CLAUDE.md）
+│   ├── skills/                    # スキルの正本
+│   └── skills.json                # スキル台帳と配備先エージェント
+├── .codex/
+│   └── inventory.json             # Codexが自分で導入したプラグイン等の記録
 ├── docs/
 │   ├── aliases.md                 # エイリアス一覧
+│   ├── skills.md                  # スキル管理ガイド
 │   ├── terminal-shortcuts.md      # Kitty・tmuxのショートカット
 │   └── usage.md                   # 利用例
 ├── scripts/
-│   └── check-zsh.zsh              # Zsh設定のスモークテスト
+│   ├── check-zsh.zsh              # Zsh設定のスモークテスト
+│   ├── deploy-skills.zsh          # スキルの配備
+│   ├── check-skills.zsh           # スキルの検査
+│   └── codex-account.py           # Codexアカウント切り替えの本体
 ├── .zshenv                        # 全Zshで必要なPATH・ロケール
 ├── .zprofile                      # ログインシェル用
 ├── .zshrc                         # private設定とinit.zshの読み込み
@@ -149,7 +160,22 @@ sheldon --version
 
 StarshipまたはSheldonが未導入でもZshは起動します。Starshipがない場合は基本プロンプトへフォールバックし、Sheldonがない場合はSheldon管理プラグインを読み込みません。
 
-### 3. dotfilesを配置
+### 3. Claude Codeを導入
+
+Claude Codeを使うマシンでは、公式のネイティブインストーラで導入します。macOSとLinuxで同じ手順です。
+実行ファイルは、PATHに含まれる`~/.local/bin/claude`に配置され、自動で更新されます。
+
+`.npmrc`でnpmのprefixを`~/.local`にしているため、npm版も同じ`~/.local/bin/claude`に入ります。
+npm版を導入済みの場合は、先に`npm uninstall -g @anthropic-ai/claude-code`で削除してください。
+
+```zsh
+if ! command -v claude >/dev/null; then
+  curl -fsSL https://claude.ai/install.sh | bash
+fi
+claude --version
+```
+
+### 4. dotfilesを配置
 
 ```zsh
 ./deploy.sh
@@ -158,7 +184,10 @@ sheldon lock
 
 既存ファイルがある場合は、バックアップして置き換えるか確認します。`~/.config` 全体ではなく、管理対象のサブディレクトリだけをリンクします。配置後の `sheldon lock` で、プラグインを初回取得します。
 
-### 4. private設定を作成
+Codex と Claude Code は対等に扱います。`~/.codex` や `~/.claude` があるエージェントについて、全体指示と台帳で対象にしたスキルを同じ正本からリンクします。
+エージェントを後から導入した場合は、もう一度 `./deploy.sh` を実行してください。シェル設定が導入済みなら `./deploy.sh --no-shell` でエージェントの設定だけを配置でき、`--agents codex,claude` で対象を明示できます。詳しくは [スキル管理ガイド](docs/skills.md) を参照してください。
+
+### 5. private設定を作成
 
 ```zsh
 cp .zshrc.private.example ~/.zshrc.private
@@ -167,7 +196,7 @@ chmod 600 ~/.zshrc.private
 
 Slack通知を使う場合だけ、`SLACK_WEBHOOK_URL` を設定してください。実ファイルはGit管理されません。
 
-### 5. 新しいZshを開始
+### 6. 新しいZshを開始
 
 ```zsh
 exec zsh

@@ -8,14 +8,33 @@ DOTFILES_DIR="${SCRIPT_PATH:A:h}"
 TARGET_HOME="${DOTFILES_TARGET_HOME:-$HOME}"
 DRY_RUN=0
 NON_INTERACTIVE=0
+REQUESTED_AGENTS=""
+NO_SHELL=0
 SKILL_ARGS=()
 
+source "$DOTFILES_DIR/scripts/agent-dirs.zsh"
+
 usage() {
-  echo "usage: ${0:t} [--dry-run] [--non-interactive]" >&2
+  echo "usage: ${0:t} [--agents codex,claude] [--no-shell] [--dry-run] [--non-interactive]" >&2
+  echo "Without --agents, sets up every agent whose config directory exists." >&2
 }
 
 while (( $# > 0 )); do
   case "$1" in
+    --agents)
+      if (( $# < 2 )); then
+        usage
+        exit 2
+      fi
+      REQUESTED_AGENTS="$2"
+      shift
+      ;;
+    --agents=*)
+      REQUESTED_AGENTS="${1#--agents=}"
+      ;;
+    --no-shell)
+      NO_SHELL=1
+      ;;
     --dry-run)
       DRY_RUN=1
       SKILL_ARGS+=("--dry-run")
@@ -37,12 +56,14 @@ while (( $# > 0 )); do
   shift
 done
 
-if [[ -z "$TARGET_HOME" || "$TARGET_HOME" == "/" ]]; then
+if [[ -z "$TARGET_HOME" || "${TARGET_HOME:A}" == "/" ]]; then
   echo "[error] invalid deploy target: $TARGET_HOME" >&2
   exit 1
 fi
 
 TARGET_HOME="${TARGET_HOME:A}"
+AGENT_LIST="$(resolve_agents "$REQUESTED_AGENTS" "$TARGET_HOME")"
+SKILL_ARGS+=(--agents "$AGENT_LIST")
 
 # ホーム直下へ配置するファイル・ディレクトリ。
 # リポジトリ直下を一括処理せず、意図したものだけを配布する。
@@ -56,7 +77,6 @@ HOME_LINKS=(
   ".zprofile"
   ".zshenv"
   ".zshrc"
-  "codex-remote-toggle.sh"
 )
 
 # ~/.config 全体ではなく、管理対象のサブディレクトリだけを配置する。
@@ -158,6 +178,18 @@ link_item() {
       fi
     fi
 
+    # 以前の配置が残した、このリポジトリ内を指す切れたリンクは確認なしで張り替える。
+    if [[ ! -e "$dst" && "$(readlink "$dst")" == "$DOTFILES_DIR/"* ]]; then
+      if (( DRY_RUN )); then
+        echo "[dry-run] would relink stale link: $dst -> $src_path"
+        return 0
+      fi
+      rm -f -- "$dst"
+      ln -s -- "$src_path" "$dst"
+      echo "[relinked] $dst -> $src_path"
+      return 0
+    fi
+
     echo "[warn] destination is a broken or different symlink: $dst"
   fi
 
@@ -188,18 +220,38 @@ link_item() {
 }
 
 main() {
-  local name
+  local name agent agent_dir
 
-  for name in "${HOME_LINKS[@]}"; do
-    link_item "$DOTFILES_DIR/$name" "$TARGET_HOME/$name"
+  if (( ! NO_SHELL )); then
+    for name in "${HOME_LINKS[@]}"; do
+      link_item "$DOTFILES_DIR/$name" "$TARGET_HOME/$name"
+    done
+
+    for name in "${CONFIG_LINKS[@]}"; do
+      link_item "$DOTFILES_DIR/.config/$name" "$TARGET_HOME/.config/$name"
+    done
+  fi
+
+  # エージェントごとの設定。全体指示は両方で同じファイルを共有する。
+  for agent in "${(@s:,:)AGENT_LIST}"; do
+    [[ -n "$agent" ]] || continue
+    agent_dir="$(agent_config_dir "$agent" "$TARGET_HOME")"
+    case "$agent" in
+      codex)
+        link_item "$DOTFILES_DIR/agents/AGENTS.md" "$agent_dir/AGENTS.md"
+        link_item "$DOTFILES_DIR/codex-remote-toggle.sh" "$TARGET_HOME/codex-remote-toggle.sh"
+        ;;
+      claude)
+        link_item "$DOTFILES_DIR/agents/AGENTS.md" "$agent_dir/CLAUDE.md"
+        ;;
+    esac
   done
 
-  for name in "${CONFIG_LINKS[@]}"; do
-    link_item "$DOTFILES_DIR/.config/$name" "$TARGET_HOME/.config/$name"
-  done
-
-  link_item "$DOTFILES_DIR/.codex/AGENTS.md" "$TARGET_HOME/.codex/AGENTS.md"
-  "$DOTFILES_DIR/scripts/deploy-codex-skills.zsh" "${SKILL_ARGS[@]}"
+  if [[ -z "$AGENT_LIST" ]]; then
+    echo "[skip] no agent configuration found (~/.codex, ~/.claude); use --agents to set one up"
+    return 0
+  fi
+  "$DOTFILES_DIR/scripts/deploy-skills.zsh" "${SKILL_ARGS[@]}"
 }
 
 main "$@"

@@ -16,14 +16,18 @@ fi
 
 SCRIPT_PATH="${(%):-%N}"
 SCRIPT_DIR="${SCRIPT_PATH:A:h}"
-DOTFILES_DIR="${CODEX_DOTFILES_DIR:-${SCRIPT_DIR:h}}"
+DOTFILES_DIR="${SKILLS_DOTFILES_DIR:-${SCRIPT_DIR:h}}"
 TARGET_HOME="${DOTFILES_TARGET_HOME:-$HOME}"
-REGISTRY="${CODEX_SKILLS_REGISTRY:-$DOTFILES_DIR/.codex/skills-registry.json}"
-CODEX_SKILLS_HOME="${CODEX_SKILLS_HOME:-$TARGET_HOME/.codex/skills}"
-HELPER="$SCRIPT_DIR/codex-skills-registry.py"
-SKILL_REL=".codex/skills/$SKILL_NAME"
+REGISTRY="${SKILLS_REGISTRY:-$DOTFILES_DIR/agents/skills.json}"
+INVENTORY="${CODEX_INVENTORY:-$DOTFILES_DIR/.codex/inventory.json}"
+HELPER="$SCRIPT_DIR/skills-registry.py"
+SKILL_REL="agents/skills/$SKILL_NAME"
 SKILL_PATH="$DOTFILES_DIR/$SKILL_REL"
-REGISTRY_REL=".codex/skills-registry.json"
+REGISTRY_REL="agents/skills.json"
+
+registry() {
+  python3 "$HELPER" --repo "$DOTFILES_DIR" --registry "$REGISTRY" --inventory "$INVENTORY" --home "$TARGET_HOME" "$@"
+}
 
 if ! git -C "$DOTFILES_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
   echo "[error] dotfiles directory is not a Git worktree: $DOTFILES_DIR" >&2
@@ -35,33 +39,18 @@ if [[ "${GIT_ROOT:A}" != "${DOTFILES_DIR:A}" ]]; then
   exit 1
 fi
 
-python3 "$HELPER" --repo "$DOTFILES_DIR" --registry "$REGISTRY" --home "$TARGET_HOME" validate >/dev/null
-KIND="$(python3 "$HELPER" --repo "$DOTFILES_DIR" --registry "$REGISTRY" --home "$TARGET_HOME" field "$SKILL_NAME" kind)"
+registry validate >/dev/null
+KIND="$(registry field "$SKILL_NAME" kind)"
 if [[ "$KIND" != "owned" && "$KIND" != "vendored" ]]; then
   echo "[error] finalize only commits owned or vendored skills; $SKILL_NAME is $KIND" >&2
   exit 1
 fi
 
-python3 "$HELPER" --repo "$DOTFILES_DIR" --registry "$REGISTRY" --home "$TARGET_HOME" \
-  validate-skill "$SKILL_NAME" "$SKILL_PATH"
-
-DESTINATION="$CODEX_SKILLS_HOME/$SKILL_NAME"
-if [[ ! -L "$DESTINATION" ]]; then
-  echo "[error] skill destination is not a symlink: $DESTINATION" >&2
-  exit 1
-fi
-if [[ ! -e "$DESTINATION" ]]; then
-  echo "[error] skill destination is a broken symlink: $DESTINATION -> $(readlink "$DESTINATION")" >&2
-  exit 1
-fi
-if [[ "${DESTINATION:A}" != "${SKILL_PATH:A}" ]]; then
-  echo "[error] skill destination points elsewhere: $DESTINATION -> $(readlink "$DESTINATION")" >&2
-  exit 1
-fi
+registry validate-skill "$SKILL_NAME" "$SKILL_PATH"
 
 if [[ -d "$SKILL_PATH/tests" ]]; then
   if [[ -f "$SKILL_PATH/pyproject.toml" ]] && command -v uv >/dev/null 2>&1; then
-    TEST_TMP="$(mktemp -d "${TMPDIR:-/tmp}/finalize-codex-skill.XXXXXX")"
+    TEST_TMP="$(mktemp -d "${TMPDIR:-/tmp}/finalize-skill.XXXXXX")"
     trap 'rm -rf -- "$TEST_TMP"' EXIT INT TERM
     cp -R "$SKILL_PATH" "$TEST_TMP/skill"
     UV_CACHE_DIR="$TEST_TMP/uv-cache" \
@@ -77,18 +66,20 @@ if [[ -d "$SKILL_PATH/tests" ]]; then
   fi
 fi
 
-"$SCRIPT_DIR/check-codex-skills.zsh"
+"$SCRIPT_DIR/check-skills.zsh"
 
 SHARED_PATHS=(
   "$REGISTRY_REL"
-  ".codex/AGENTS.md"
+  ".codex/inventory.json"
+  "agents/AGENTS.md"
   "deploy.sh"
-  "docs/codex-skills.md"
-  "scripts/codex-skills-registry.py"
-  "scripts/deploy-codex-skills.zsh"
-  "scripts/check-codex-skills.zsh"
-  "scripts/finalize-codex-skill.zsh"
-  "tests/test-codex-skills.zsh"
+  "docs/skills.md"
+  "scripts/agent-dirs.zsh"
+  "scripts/skills-registry.py"
+  "scripts/deploy-skills.zsh"
+  "scripts/check-skills.zsh"
+  "scripts/finalize-skill.zsh"
+  "tests/test-skills.zsh"
   ".gitignore"
 )
 
@@ -133,13 +124,13 @@ if git -C "$DOTFILES_DIR" diff --cached --quiet; then
 fi
 
 if git -C "$DOTFILES_DIR" diff --cached --quiet -- "$SKILL_REL"; then
-  COMMIT_MESSAGE="update: update Codex skill registry"
+  COMMIT_MESSAGE="update: update skill registry"
 elif git -C "$DOTFILES_DIR" cat-file -e "HEAD:$SKILL_REL/SKILL.md" 2>/dev/null; then
-  COMMIT_MESSAGE="update: update $SKILL_NAME Codex skill"
+  COMMIT_MESSAGE="update: update $SKILL_NAME skill"
 elif [[ "$KIND" == "vendored" ]]; then
-  COMMIT_MESSAGE="add: vendor $SKILL_NAME Codex skill"
+  COMMIT_MESSAGE="add: vendor $SKILL_NAME skill"
 else
-  COMMIT_MESSAGE="add: add $SKILL_NAME Codex skill"
+  COMMIT_MESSAGE="add: add $SKILL_NAME skill"
 fi
 
 git -C "$DOTFILES_DIR" commit -m "$COMMIT_MESSAGE"

@@ -13,6 +13,7 @@ for dotfiles_zsh_module in \
   functions/nvidia.zsh \
   functions/pdf.zsh \
   functions/nvim.zsh \
+  functions/codex.zsh \
   integrations.zsh \
   prompt.zsh \
   plugin-settings.zsh \
