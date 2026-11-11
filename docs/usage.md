@@ -147,3 +147,33 @@ done
 ```
 
 SheldonまたはStarshipが見つからなくてもZsh自体は起動します。プラグインが出ない場合は `sheldon lock`、プロンプトが基本表示になる場合はStarshipのPATHを確認します。
+
+## Codexのアカウントを切り替える
+
+`codex-account` は、Codexのログイン情報（`~/.codex/auth.json`）を名前付きのプロファイルとして保存し、入れ替えます。
+会話履歴、設定、スキルはアカウント間で共有されます。
+プロファイルは `~/.codex/auth-profiles/` に権限 `600` で保存され、Git管理されません。
+
+```zsh
+# 今のログインを保存する
+codex-account save personal
+
+# 別アカウントを追加する。今のログインには触れない
+codex-account add lab
+# SSH先などブラウザを開けない環境では
+codex-account add lab --device-auth
+
+# 一覧と切り替え
+codex-account list
+codex-account use lab
+```
+
+切り替え時は、今のログインを先に元のプロファイルへ書き戻します。
+Codexはリフレッシュトークンを更新するため、保存時のままのコピーへ戻すとログインが切れることがあるからです。
+
+macOSでCodexアプリが起動している場合は、確認後にアプリを終了し、切り替え後に再度開きます。
+CLIのCodexセッションが残っている場合は、古いアカウントで `auth.json` を上書きするおそれがあるため、切り替えを中止します。
+保存していないログインが有効な場合も中止します。どちらも `--force` で続行できますが、未保存のログインは失われます。
+
+ログイン情報はマシンごとに独立しています。
+v101などでも使う場合は、そのマシンで `codex-account add` を実行してください。`auth-profiles/` を別のマシンへコピーすると、トークン更新が競合して片方のログインが切れます。

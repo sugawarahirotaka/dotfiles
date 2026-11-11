@@ -38,7 +38,8 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 │   │   │   ├── notification.zsh  # Slack通知
 │   │   │   ├── nvidia.zsh        # GPU利用状況
 │   │   │   ├── pdf.zsh           # PDF圧縮
-│   │   │   └── nvim.zsh          # Neovimバックアップ・復元
+│   │   │   ├── nvim.zsh          # Neovimバックアップ・復元
+│   │   │   └── codex.zsh         # Codexアカウント切り替え
 │   │   └── hosts/
 │   │       ├── init.zsh           # ホスト振り分け
 │   │       ├── lab-server.zsh     # v101〜v108共通
@@ -52,7 +53,8 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 │   ├── terminal-shortcuts.md      # Kitty・tmuxのショートカット
 │   └── usage.md                   # 利用例
 ├── scripts/
-│   └── check-zsh.zsh              # Zsh設定のスモークテスト
+│   ├── check-zsh.zsh              # Zsh設定のスモークテスト
+│   └── codex-account.py           # Codexアカウント切り替えの本体
 ├── .zshenv                        # 全Zshで必要なPATH・ロケール
 ├── .zprofile                      # ログインシェル用
 ├── .zshrc                         # private設定とinit.zshの読み込み
