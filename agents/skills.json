@@ -1,0 +1,166 @@
+{
+  "schema_version": 2,
+  "repository": {
+    "url": "https://github.com/sugawarahirotaka/dotfiles",
+    "visibility": "public",
+    "verified_at": "2026-09-04",
+    "license": "UNLICENSED"
+  },
+  "skills": [
+    {
+      "name": "codex-thread-links",
+      "kind": "owned",
+      "targets": [
+        "codex"
+      ],
+      "upstream": "",
+      "version": "",
+      "license": "UNLICENSED",
+      "dependencies": [
+        "Codex desktop thread tools when available",
+        "Obsidian Markdown consumers"
+      ],
+      "notes": "User-authored durable thread reference policy."
+    },
+    {
+      "name": "create-sugawara-research-slides",
+      "kind": "owned",
+      "targets": [
+        "codex"
+      ],
+      "upstream": "",
+      "version": "",
+      "license": "UNLICENSED",
+      "dependencies": [
+        "presentations plugin skill",
+        "@oai/artifact-tool",
+        "Bundled Sugawara PPTX template"
+      ],
+      "notes": "User-authored research presentation style and asset."
+    },
+    {
+      "name": "daily-neruwa",
+      "kind": "owned",
+      "targets": [
+        "codex"
+      ],
+      "upstream": "local snapshot of former standalone repository",
+      "version": "84c76d4bbc9cd18c6b899779ffe616e488bd79f5",
+      "license": "UNLICENSED",
+      "dependencies": [
+        "uv",
+        "Python >=3.11",
+        "/Users/sugawara/.local/bin/obsidian",
+        "Obsidian_vault",
+        "codex-session-memory",
+        "codex-thread-links",
+        "obsidian-markdown"
+      ],
+      "notes": "Imported from a clean working tree with git archive; standalone Git history intentionally omitted."
+    },
+    {
+      "name": "manage-skills",
+      "kind": "owned",
+      "targets": [
+        "codex"
+      ],
+      "upstream": "",
+      "version": "",
+      "license": "UNLICENSED",
+      "dependencies": [
+        "scripts/deploy-skills.zsh",
+        "scripts/check-skills.zsh",
+        "scripts/finalize-skill.zsh"
+      ],
+      "notes": "Canonical workflow for all future Codex skill lifecycle changes."
+    },
+    {
+      "name": "personal-dev-defaults",
+      "kind": "owned",
+      "targets": [
+        "codex",
+        "claude"
+      ],
+      "upstream": "",
+      "version": "",
+      "license": "UNLICENSED",
+      "dependencies": [
+        "Repository-native development tooling",
+        "uv when no stronger Python convention exists"
+      ],
+      "notes": "User-authored personal development defaults."
+    },
+    {
+      "name": "write-readable-japanese",
+      "kind": "owned",
+      "targets": [
+        "codex",
+        "claude"
+      ],
+      "upstream": "",
+      "version": "",
+      "license": "UNLICENSED",
+      "dependencies": [],
+      "notes": "User-authored Japanese technical writing policy."
+    },
+    {
+      "name": "archify",
+      "kind": "vendored",
+      "targets": [
+        "codex"
+      ],
+      "upstream": "https://github.com/tt-a1i/archify",
+      "version": "d8e4daf2610d512821365f41b139d874b29efe81",
+      "license": "MIT",
+      "dependencies": [
+        "Node.js >=18"
+      ],
+      "notes": "Exact upstream archify/ snapshot plus immutable provenance and bundled license metadata. Optional visual-check and export paths may require Playwright, Chromium, FFmpeg, or platform tools."
+    },
+    {
+      "name": "obsidian-cli",
+      "kind": "vendored",
+      "targets": [
+        "codex"
+      ],
+      "upstream": "https://github.com/kepano/obsidian-skills",
+      "version": "a1dc48e68138490d522c04cbf5822214c6eb1202",
+      "license": "MIT",
+      "dependencies": [
+        "Obsidian desktop app",
+        "Obsidian CLI"
+      ],
+      "notes": "Exact upstream snapshot plus local provenance and license metadata."
+    },
+    {
+      "name": "obsidian-markdown",
+      "kind": "vendored",
+      "targets": [
+        "codex",
+        "claude"
+      ],
+      "upstream": "https://github.com/kepano/obsidian-skills",
+      "version": "a1dc48e68138490d522c04cbf5822214c6eb1202",
+      "license": "MIT",
+      "dependencies": [],
+      "notes": "Exact upstream snapshot plus local provenance and license metadata."
+    },
+    {
+      "name": "scientific-visualization",
+      "kind": "vendored",
+      "targets": [
+        "codex"
+      ],
+      "upstream": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "version": "1e5eeffbdad3749125afe7ab48a39694e27f181c",
+      "license": "MIT",
+      "dependencies": [
+        "Python >=3.11",
+        "uv",
+        "Matplotlib/Pillow/pypdf as needed",
+        "Chrome or Chromium for Plotly Kaleido v1 static export"
+      ],
+      "notes": "Exact upstream skills/scientific-visualization snapshot plus immutable provenance and license metadata. Bundled CLIs are network-free."
+    }
+  ]
+}

@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Parse and validate the canonical Codex skill registry."""
+"""Parse and validate the agent skill registry and the Codex inventory.
+
+agents/skills.json lists the skills whose sources live in this repository
+(owned and vendored) and the agents each one is deployed to.
+.codex/inventory.json records what Codex itself installed (plugins, system
+and project skills) so it can be reinstalled; those are never deployed.
+"""
 
 from __future__ import annotations
 
@@ -12,8 +18,12 @@ from pathlib import Path
 from urllib.parse import unquote
 
 
-KINDS = {"owned", "vendored", "plugin", "external", "project", "system", "unknown"}
+AGENTS = ("codex", "claude")
 MANAGED_KINDS = {"owned", "vendored"}
+INVENTORY_KINDS = {"plugin", "external", "project", "system", "unknown"}
+MANAGED_ROOT = "agents/skills"
+DEFAULT_REGISTRY = "agents/skills.json"
+DEFAULT_INVENTORY = ".codex/inventory.json"
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 SUSPICIOUS_NAMES = re.compile(
@@ -36,29 +46,77 @@ class RegistryError(ValueError):
     pass
 
 
-def load_registry(path: Path) -> dict:
+def load_json(path: Path, label: str) -> dict:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
-        raise RegistryError(f"registry not found: {path}") from exc
+        raise RegistryError(f"{label} not found: {path}") from exc
     except json.JSONDecodeError as exc:
         raise RegistryError(f"invalid JSON in {path}: {exc}") from exc
     if not isinstance(data, dict):
-        raise RegistryError("registry root must be an object")
+        raise RegistryError(f"{label} root must be an object")
     return data
+
+
+def load_inventory(path: Path) -> dict:
+    if not path.exists():
+        return {"schema_version": 1, "plugins": [], "skills": []}
+    return load_json(path, "inventory")
 
 
 def validate_registry(data: dict) -> list[str]:
     errors: list[str] = []
-    if data.get("schema_version") != 1:
-        errors.append("schema_version must be 1")
+    if data.get("schema_version") != 2:
+        errors.append("registry schema_version must be 2")
+    skills = data.get("skills")
+    if not isinstance(skills, list):
+        return errors + ["registry skills must be an array"]
 
+    names: set[str] = set()
+    for index, skill in enumerate(skills):
+        if not isinstance(skill, dict):
+            errors.append(f"skills[{index}] must be an object")
+            continue
+        name = skill.get("name")
+        kind = skill.get("kind")
+        if not isinstance(name, str) or not NAME_RE.fullmatch(name):
+            errors.append(f"skills[{index}] has invalid name: {name!r}")
+            continue
+        if name in names:
+            errors.append(f"duplicate skill name in registry: {name}")
+        names.add(name)
+        if kind not in MANAGED_KINDS:
+            errors.append(f"skill {name} kind must be owned or vendored, not {kind!r}")
+        targets = skill.get("targets")
+        if (
+            not isinstance(targets, list)
+            or not targets
+            or len(set(targets)) != len(targets)
+            or any(target not in AGENTS for target in targets)
+        ):
+            errors.append(f"skill {name} targets must be a non-empty list drawn from {list(AGENTS)}")
+        for field in ("upstream", "version", "license", "notes"):
+            if not isinstance(skill.get(field), str):
+                errors.append(f"skill {name} field {field} must be a string")
+        if not isinstance(skill.get("dependencies"), list):
+            errors.append(f"skill {name} dependencies must be an array")
+        if kind == "vendored":
+            for field in ("upstream", "version", "license"):
+                if not skill.get(field):
+                    errors.append(f"vendored skill {name} is missing {field}")
+    return errors
+
+
+def validate_inventory(data: dict, managed_names: set[str]) -> list[str]:
+    errors: list[str] = []
+    if data.get("schema_version") != 1:
+        errors.append("inventory schema_version must be 1")
     skills = data.get("skills")
     plugins = data.get("plugins")
     if not isinstance(skills, list):
-        return errors + ["skills must be an array"]
+        return errors + ["inventory skills must be an array"]
     if not isinstance(plugins, list):
-        return errors + ["plugins must be an array"]
+        return errors + ["inventory plugins must be an array"]
 
     plugin_ids: set[str] = set()
     for index, plugin in enumerate(plugins):
@@ -82,41 +140,27 @@ def validate_registry(data: dict) -> list[str]:
     names: set[str] = set()
     for index, skill in enumerate(skills):
         if not isinstance(skill, dict):
-            errors.append(f"skills[{index}] must be an object")
+            errors.append(f"inventory skills[{index}] must be an object")
             continue
         name = skill.get("name")
         kind = skill.get("kind")
         if not isinstance(name, str) or not NAME_RE.fullmatch(name):
-            errors.append(f"skills[{index}] has invalid name: {name!r}")
+            errors.append(f"inventory skills[{index}] has invalid name: {name!r}")
             continue
         if name in names:
-            errors.append(f"duplicate skill name in registry: {name}")
+            errors.append(f"duplicate skill name in inventory: {name}")
+        if name in managed_names:
+            errors.append(f"skill {name} is in both the registry and the Codex inventory")
         names.add(name)
-        if kind not in KINDS:
-            errors.append(f"skill {name} has invalid kind: {kind!r}")
+        if kind not in INVENTORY_KINDS:
+            errors.append(f"inventory skill {name} has invalid kind: {kind!r}")
         if not isinstance(skill.get("enabled"), bool):
-            errors.append(f"skill {name} enabled must be boolean")
-        claude_enabled = skill.get("claude_enabled", False)
-        if not isinstance(claude_enabled, bool):
-            errors.append(f"skill {name} claude_enabled must be boolean")
-        elif claude_enabled and (kind not in MANAGED_KINDS or name in {"synced", "anthropic-skills"}):
-            errors.append(f"skill {name} is not eligible for Claude deployment")
+            errors.append(f"inventory skill {name} enabled must be boolean")
         for field in ("local_path", "destination", "upstream", "version", "plugin_id", "license", "notes"):
             if not isinstance(skill.get(field), str):
-                errors.append(f"skill {name} field {field} must be a string")
+                errors.append(f"inventory skill {name} field {field} must be a string")
         if not isinstance(skill.get("dependencies"), list):
-            errors.append(f"skill {name} dependencies must be an array")
-        if kind in MANAGED_KINDS:
-            expected_local = f".codex/skills/{name}"
-            expected_destination = f"~/.codex/skills/{name}"
-            if skill.get("local_path") != expected_local:
-                errors.append(f"managed skill {name} local_path must be {expected_local}")
-            if skill.get("destination") != expected_destination:
-                errors.append(f"managed skill {name} destination must be {expected_destination}")
-        if kind == "vendored":
-            for field in ("upstream", "version", "license"):
-                if not skill.get(field):
-                    errors.append(f"vendored skill {name} is missing {field}")
+            errors.append(f"inventory skill {name} dependencies must be an array")
         if kind == "plugin":
             plugin_id = skill.get("plugin_id")
             if not plugin_id:
@@ -126,8 +170,25 @@ def validate_registry(data: dict) -> list[str]:
     return errors
 
 
+def load_all(args: argparse.Namespace) -> tuple[Path, dict, dict, Path]:
+    """Load and validate both files; raise RegistryError on any problem."""
+    repo, registry_path, inventory_path, home = registry_paths(args)
+    registry = load_json(registry_path, "registry")
+    inventory = load_inventory(inventory_path)
+    errors = validate_registry(registry)
+    managed_names = {s["name"] for s in registry.get("skills", []) if isinstance(s, dict) and "name" in s}
+    errors += validate_inventory(inventory, managed_names)
+    if errors:
+        raise RegistryError("; ".join(errors))
+    return repo, registry, inventory, home
+
+
 def skill_map(data: dict) -> dict[str, dict]:
     return {entry["name"]: entry for entry in data.get("skills", []) if isinstance(entry, dict) and "name" in entry}
+
+
+def managed_source(repo: Path, name: str) -> Path:
+    return repo / MANAGED_ROOT / name
 
 
 def expand_user_path(value: str, home: Path) -> Path:
@@ -247,63 +308,75 @@ def validate_skill(path: Path, expected_name: str) -> list[str]:
     return errors
 
 
-def registry_paths(args: argparse.Namespace) -> tuple[Path, Path, Path]:
+def direct_skill_locations(root: Path) -> dict[str, list[Path]]:
+    result: dict[str, list[Path]] = {}
+    if not root.is_dir():
+        return result
+    for child in root.iterdir():
+        if child.name.startswith("."):
+            continue
+        if (child / "SKILL.md").is_file():
+            result.setdefault(child.name, []).append(child)
+    return result
+
+
+
+
+def registry_paths(args: argparse.Namespace) -> tuple[Path, Path, Path, Path]:
     repo = Path(args.repo).expanduser().resolve()
-    registry = Path(args.registry).expanduser().resolve() if args.registry else repo / ".codex/skills-registry.json"
+    registry = Path(args.registry).expanduser().resolve() if args.registry else repo / DEFAULT_REGISTRY
+    inventory = Path(args.inventory).expanduser().resolve() if args.inventory else repo / DEFAULT_INVENTORY
     home = Path(args.home).expanduser().resolve()
-    return repo, registry, home
+    return repo, registry, inventory, home
 
 
 def command_validate(args: argparse.Namespace) -> int:
-    _, registry, _ = registry_paths(args)
     try:
-        data = load_registry(registry)
-        errors = validate_registry(data)
+        load_all(args)
     except RegistryError as exc:
-        errors = [str(exc)]
-    for error in errors:
-        print(f"[error] {error}", file=sys.stderr)
-    if not errors:
-        print(f"[ok] registry valid: {registry}")
-    return bool(errors)
+        for error in str(exc).split("; "):
+            print(f"[error] {error}", file=sys.stderr)
+        return 1
+    print("[ok] registry and inventory valid")
+    return 0
 
 
 def command_managed_links(args: argparse.Namespace) -> int:
-    repo, registry, _ = registry_paths(args)
-    data = load_registry(registry)
-    errors = validate_registry(data)
-    if errors:
-        raise RegistryError("; ".join(errors))
-    enabled_field = "claude_enabled" if args.claude else "enabled"
-    for skill in data["skills"]:
-        if skill["kind"] in MANAGED_KINDS and skill.get(enabled_field, False):
+    repo, registry, _, _ = load_all(args)
+    for skill in registry["skills"]:
+        if args.agent in skill["targets"]:
             try:
-                source = (repo / skill["local_path"]).resolve()
+                source = managed_source(repo, skill["name"]).resolve()
             except (OSError, RuntimeError) as exc:
                 raise RegistryError(f"cannot resolve source for {skill['name']}: {exc}") from exc
             sys.stdout.buffer.write(skill["name"].encode() + b"\0" + str(source).encode() + b"\0")
     return 0
 
 
+def plugin_skill_names(inventory: dict, cache_root: Path | None) -> set[str]:
+    names = {
+        skill["name"]
+        for skill in inventory.get("skills", [])
+        if skill.get("kind") == "plugin" and skill.get("enabled")
+    }
+    if cache_root and cache_root.is_dir():
+        for skill_md in cache_root.rglob("SKILL.md"):
+            if skill_md.parent.parent.name == "skills" and NAME_RE.fullmatch(skill_md.parent.name):
+                names.add(skill_md.parent.name)
+    return names
+
+
 def command_plugin_names(args: argparse.Namespace) -> int:
-    _, registry, _ = registry_paths(args)
-    data = load_registry(registry)
-    names = {skill["name"] for skill in data.get("skills", []) if skill.get("kind") == "plugin" and skill.get("enabled")}
-    if args.cache_root:
-        cache_root = Path(args.cache_root).expanduser()
-        if cache_root.is_dir():
-            for skill_md in cache_root.rglob("SKILL.md"):
-                if skill_md.parent.parent.name == "skills" and NAME_RE.fullmatch(skill_md.parent.name):
-                    names.add(skill_md.parent.name)
-    for name in sorted(names):
+    _, _, inventory, _ = load_all(args)
+    cache_root = Path(args.cache_root).expanduser() if args.cache_root else None
+    for name in sorted(plugin_skill_names(inventory, cache_root)):
         print(name)
     return 0
 
 
 def command_field(args: argparse.Namespace) -> int:
-    _, registry, _ = registry_paths(args)
-    data = load_registry(registry)
-    entry = skill_map(data).get(args.name)
+    _, registry, _, _ = load_all(args)
+    entry = skill_map(registry).get(args.name)
     if entry is None:
         print(f"skill is not registered: {args.name}", file=sys.stderr)
         return 1
@@ -324,116 +397,129 @@ def command_validate_skill(args: argparse.Namespace) -> int:
     return bool(errors)
 
 
-def direct_skill_locations(root: Path) -> dict[str, list[Path]]:
-    result: dict[str, list[Path]] = {}
-    if not root.is_dir():
-        return result
-    for child in root.iterdir():
-        if child.name.startswith("."):
-            continue
-        if (child / "SKILL.md").is_file():
-            result.setdefault(child.name, []).append(child)
-    return result
+def parse_agent_roots(values: list[str]) -> dict[str, Path]:
+    roots: dict[str, Path] = {}
+    for value in values:
+        agent, sep, path = value.partition("=")
+        if not sep or agent not in AGENTS or not path:
+            raise RegistryError(f"--agent-root must be AGENT=PATH with AGENT in {list(AGENTS)}: {value}")
+        roots[agent] = Path(path).expanduser().resolve()
+    return roots
 
 
-def command_check(args: argparse.Namespace) -> int:
-    repo, registry, home = registry_paths(args)
-    errors: list[str] = []
-    warnings: list[str] = []
+def check_link(destination: Path, source: Path) -> str | None:
+    if not destination.is_symlink():
+        return f"managed skill link is missing: {destination}"
     try:
-        data = load_registry(registry)
-    except RegistryError as exc:
-        print(f"[error] {exc}", file=sys.stderr)
-        return 1
-    errors.extend(validate_registry(data))
-    entries = skill_map(data)
+        if destination.resolve(strict=True) != source.resolve(strict=True):
+            return f"managed skill link points elsewhere: {destination} -> {os.readlink(destination)}"
+    except FileNotFoundError:
+        return f"broken managed skill link: {destination}"
+    return None
 
-    managed_root = repo / ".codex/skills"
-    registered_managed = {name for name, entry in entries.items() if entry.get("kind") in MANAGED_KINDS}
-    if managed_root.is_dir():
-        for child in managed_root.iterdir():
-            if child.is_dir() and (child / "SKILL.md").is_file() and child.name not in registered_managed:
-                errors.append(f"dotfiles skill is not registered: {child}")
 
-    for name in sorted(registered_managed):
-        entry = entries[name]
-        source = (repo / entry["local_path"]).resolve()
-        try:
-            source.relative_to(managed_root.resolve())
-        except ValueError:
-            errors.append(f"managed skill source is outside dotfiles: {name}: {source}")
-        errors.extend(validate_skill(source, name))
-        if entry.get("enabled"):
-            destination = expand_user_path(entry["destination"], home)
-            if not destination.is_symlink():
-                errors.append(f"managed skill destination is not a symlink: {destination}")
-            else:
-                try:
-                    if destination.resolve(strict=True) != source.resolve(strict=True):
-                        errors.append(f"managed skill symlink points elsewhere: {destination} -> {os.readlink(destination)}")
-                except FileNotFoundError:
-                    errors.append(f"broken managed skill symlink: {destination}")
-        if entry.get("kind") == "vendored" and source.is_dir():
-            metadata_path = source / "UPSTREAM.json"
-            try:
-                metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError) as exc:
-                errors.append(f"invalid or missing vendored metadata {metadata_path}: {exc}")
-            else:
-                for field in ("upstream_url", "commit", "retrieved_at", "license", "update_method", "local_changes"):
-                    if field not in metadata or metadata[field] in (None, ""):
-                        errors.append(f"vendored metadata missing {field}: {metadata_path}")
-                if metadata.get("upstream_url") != entry.get("upstream"):
-                    errors.append(f"vendored upstream mismatch for {name}")
-                if metadata.get("commit") != entry.get("version"):
-                    errors.append(f"vendored version mismatch for {name}")
-                license_file = metadata.get("license_file")
-                if not license_file or not (source / license_file).is_file():
-                    errors.append(f"vendored license file missing for {name}")
+def check_vendored_metadata(name: str, entry: dict, source: Path) -> list[str]:
+    errors: list[str] = []
+    metadata_path = source / "UPSTREAM.json"
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"invalid or missing vendored metadata {metadata_path}: {exc}"]
+    for field in ("upstream_url", "commit", "retrieved_at", "license", "update_method", "local_changes"):
+        if field not in metadata or metadata[field] in (None, ""):
+            errors.append(f"vendored metadata missing {field}: {metadata_path}")
+    if metadata.get("upstream_url") != entry.get("upstream"):
+        errors.append(f"vendored upstream mismatch for {name}")
+    if metadata.get("commit") != entry.get("version"):
+        errors.append(f"vendored version mismatch for {name}")
+    license_file = metadata.get("license_file")
+    if not license_file or not (source / license_file).is_file():
+        errors.append(f"vendored license file missing for {name}")
+    return errors
 
-    codex_root = Path(args.codex_skills_root).expanduser().resolve() if args.codex_skills_root else home / ".codex/skills"
+
+def check_codex_discovery(args: argparse.Namespace, inventory: dict, codex_root: Path, home: Path) -> list[str]:
+    """Codex also discovers ~/.agents/skills and plugin skills; names must stay unique."""
+    errors: list[str] = []
     agents_root = Path(args.agents_skills_root).expanduser().resolve() if args.agents_skills_root else home / ".agents/skills"
-    for root in (codex_root, agents_root):
-        if root.is_dir():
-            for child in root.iterdir():
-                if child.is_symlink() and not child.exists():
-                    errors.append(f"broken skill symlink: {child} -> {os.readlink(child)}")
+    if agents_root.is_dir():
+        for child in agents_root.iterdir():
+            if child.is_symlink() and not child.exists():
+                errors.append(f"broken skill symlink: {child} -> {os.readlink(child)}")
 
     locations: dict[str, list[Path]] = {}
     for root in (codex_root, agents_root):
         for name, paths in direct_skill_locations(root).items():
             locations.setdefault(name, []).extend(paths)
-    plugin_skill_names = {entry["name"] for entry in data["skills"] if entry.get("kind") == "plugin" and entry.get("enabled")}
-    plugin_cache = Path(args.plugin_cache_root).expanduser() if args.plugin_cache_root else home / ".codex/plugins/cache"
-    if plugin_cache.is_dir():
-        for plugin_skill_md in plugin_cache.rglob("SKILL.md"):
-            if plugin_skill_md.parent.parent.name == "skills" and NAME_RE.fullmatch(plugin_skill_md.parent.name):
-                plugin_skill_names.add(plugin_skill_md.parent.name)
-
+    cache_root = Path(args.plugin_cache_root).expanduser() if args.plugin_cache_root else home / ".codex/plugins/cache"
+    plugin_names = plugin_skill_names(inventory, cache_root)
     for name, paths in locations.items():
-        resolved = {str(path.resolve()) for path in paths}
         if len(paths) > 1:
             errors.append(f"duplicate discovered skill name {name}: {', '.join(map(str, paths))}")
-        if name in plugin_skill_names:
-            errors.append(f"local skill collides with plugin skill name {name}: {', '.join(sorted(resolved))}")
+        if name in plugin_names:
+            resolved = sorted({str(path.resolve()) for path in paths})
+            errors.append(f"local skill collides with plugin skill name {name}: {', '.join(resolved)}")
 
-    project_entry = entries.get("codex-session-memory")
-    if project_entry and project_entry.get("kind") == "project" and project_entry.get("enabled"):
-        source = expand_user_path(project_entry["local_path"], home)
-        destination = expand_user_path(project_entry["destination"], home)
+    for entry in inventory.get("skills", []):
+        if entry.get("kind") != "project" or not entry.get("enabled"):
+            continue
+        source = expand_user_path(entry["local_path"], home)
+        destination = expand_user_path(entry["destination"], home)
         if not source.is_dir() or not (source / "SKILL.md").is_file():
-            errors.append(f"Obsidian project skill source is missing: {source}")
-        if not destination.is_symlink():
-            errors.append(f"Obsidian project skill link is missing: {destination}")
-        else:
-            try:
-                if destination.resolve(strict=True) != source.resolve(strict=True):
-                    errors.append(f"Obsidian project skill link points elsewhere: {destination}")
-            except FileNotFoundError:
-                errors.append(f"Obsidian project skill link is broken: {destination}")
+            errors.append(f"project skill source is missing: {source}")
+        elif (problem := check_link(destination, source)) is not None:
+            errors.append(f"project skill {entry['name']}: {problem}")
+    return errors
 
-    if any(entry.get("name") == "daily-neruwa" and entry.get("kind") == "owned" for entry in data["skills"]):
-        daily = managed_root / "daily-neruwa"
+
+def command_check(args: argparse.Namespace) -> int:
+    errors: list[str] = []
+    warnings: list[str] = []
+    try:
+        repo, registry, inventory, home = load_all(args)
+        agent_roots = parse_agent_roots(args.agent_root)
+    except RegistryError as exc:
+        for error in str(exc).split("; "):
+            print(f"[error] {error}", file=sys.stderr)
+        return 1
+    entries = skill_map(registry)
+
+    managed_root = repo / MANAGED_ROOT
+    if managed_root.is_dir():
+        for child in managed_root.iterdir():
+            if child.is_dir() and (child / "SKILL.md").is_file() and child.name not in entries:
+                errors.append(f"dotfiles skill is not registered: {child}")
+
+    for name in sorted(entries):
+        entry = entries[name]
+        source = managed_source(repo, name)
+        try:
+            source.resolve().relative_to(managed_root.resolve())
+        except ValueError:
+            errors.append(f"managed skill source is outside dotfiles: {name}: {source.resolve()}")
+        errors.extend(validate_skill(source.resolve(), name))
+        if entry["kind"] == "vendored" and source.is_dir():
+            errors.extend(check_vendored_metadata(name, entry, source))
+        for agent, root in agent_roots.items():
+            destination = root / name
+            if agent in entry["targets"]:
+                problem = check_link(destination, source)
+                if problem:
+                    errors.append(f"{agent}: {problem}")
+            elif destination.is_symlink() and destination.exists() and destination.resolve() == source.resolve():
+                warnings.append(f"{agent}: {name} is linked but not targeted; remove {destination} after checking it")
+
+    for agent, root in agent_roots.items():
+        if root.is_dir():
+            for child in root.iterdir():
+                if child.is_symlink() and not child.exists():
+                    errors.append(f"{agent}: broken skill symlink: {child} -> {os.readlink(child)}")
+
+    if "codex" in agent_roots:
+        errors.extend(check_codex_discovery(args, inventory, agent_roots["codex"], home))
+
+    daily = managed_root / "daily-neruwa"
+    if daily.is_dir():
         for forbidden in (".git", ".venv", ".pytest_cache", "__pycache__"):
             if any(path.name == forbidden for path in daily.rglob(forbidden)):
                 errors.append(f"daily-neruwa contains forbidden path: {forbidden}")
@@ -443,9 +529,10 @@ def command_check(args: argparse.Namespace) -> int:
     for error in errors:
         print(f"[error] {error}", file=sys.stderr)
     if errors:
-        print(f"[failed] {len(errors)} Codex skill issue(s)", file=sys.stderr)
+        print(f"[failed] {len(errors)} skill issue(s)", file=sys.stderr)
         return 1
-    print(f"[ok] {len(entries)} registered Codex skills checked")
+    checked = ", ".join(agent_roots) if agent_roots else "no agent links"
+    print(f"[ok] {len(entries)} managed skills checked ({checked})")
     return 0
 
 
@@ -453,12 +540,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", default=str(Path(__file__).resolve().parent.parent))
     parser.add_argument("--registry")
+    parser.add_argument("--inventory")
     parser.add_argument("--home", default=os.environ.get("HOME", ""))
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     subparsers.add_parser("validate").set_defaults(func=command_validate)
+
     managed_links = subparsers.add_parser("managed-links")
-    managed_links.add_argument("--claude", action="store_true")
+    managed_links.add_argument("--agent", required=True, choices=AGENTS)
     managed_links.set_defaults(func=command_managed_links)
 
     plugin_names = subparsers.add_parser("plugin-names")
@@ -476,7 +565,7 @@ def build_parser() -> argparse.ArgumentParser:
     validate_skill_parser.set_defaults(func=command_validate_skill)
 
     check = subparsers.add_parser("check")
-    check.add_argument("--codex-skills-root")
+    check.add_argument("--agent-root", action="append", default=[], metavar="AGENT=PATH")
     check.add_argument("--agents-skills-root")
     check.add_argument("--plugin-cache-root")
     check.set_defaults(func=command_check)

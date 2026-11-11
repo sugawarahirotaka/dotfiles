@@ -1,0 +1,6 @@
+interface:
+  display_name: "Manage Skills"
+  short_description: "Safely manage shared Codex and Claude skill lifecycle and provenance"
+  default_prompt: "Use $manage-skills to add or change a skill with registry, target agents, symlink, validation, and commit checks."
+policy:
+  allow_implicit_invocation: true

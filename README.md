@@ -48,12 +48,21 @@ macOSと研究室サーバーで共用する個人用dotfilesです。Zsh設定�
 │   ├── kitty/                     # Kitty設定
 │   ├── lf/                        # lf設定
 │   └── nvim/                      # Neovim設定
+├── agents/                        # CodexとClaude Codeで共有する設定
+│   ├── AGENTS.md                  # 全体指示（~/.codex/AGENTS.md と ~/.claude/CLAUDE.md）
+│   ├── skills/                    # スキルの正本
+│   └── skills.json                # スキル台帳と配備先エージェント
+├── .codex/
+│   └── inventory.json             # Codexが自分で導入したプラグイン等の記録
 ├── docs/
 │   ├── aliases.md                 # エイリアス一覧
+│   ├── skills.md                  # スキル管理ガイド
 │   ├── terminal-shortcuts.md      # Kitty・tmuxのショートカット
 │   └── usage.md                   # 利用例
 ├── scripts/
 │   ├── check-zsh.zsh              # Zsh設定のスモークテスト
+│   ├── deploy-skills.zsh          # スキルの配備
+│   ├── check-skills.zsh           # スキルの検査
 │   └── codex-account.py           # Codexアカウント切り替えの本体
 ├── .zshenv                        # 全Zshで必要なPATH・ロケール
 ├── .zprofile                      # ログインシェル用
@@ -173,8 +182,8 @@ sheldon lock
 
 既存ファイルがある場合は、バックアップして置き換えるか確認します。`~/.config` 全体ではなく、管理対象のサブディレクトリだけをリンクします。配置後の `sheldon lock` で、プラグインを初回取得します。
 
-Claude Code を使うマシンでは、`./deploy.sh --claude` でシェル設定と Claude 用のスキルを配置できます。
-シェル設定が導入済みなら、`./deploy.sh --claude --skills-only` でスキルだけを配置できます。プレビューと SSH 先への配備は [スキル管理ガイド](docs/codex-skills.md#claude-code) を参照してください。
+Codex と Claude Code は対等に扱います。`~/.codex` や `~/.claude` があるエージェントについて、全体指示と台帳で対象にしたスキルを同じ正本からリンクします。
+エージェントを後から導入した場合は、もう一度 `./deploy.sh` を実行してください。シェル設定が導入済みなら `./deploy.sh --no-shell` でエージェントの設定だけを配置でき、`--agents codex,claude` で対象を明示できます。詳しくは [スキル管理ガイド](docs/skills.md) を参照してください。
 
 ### 5. private設定を作成
 
