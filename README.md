@@ -147,7 +147,22 @@ sheldon --version
 
 StarshipまたはSheldonが未導入でもZshは起動します。Starshipがない場合は基本プロンプトへフォールバックし、Sheldonがない場合はSheldon管理プラグインを読み込みません。
 
-### 3. dotfilesを配置
+### 3. Claude Codeを導入
+
+Claude Codeを使うマシンでは、公式のネイティブインストーラで導入します。macOSとLinuxで同じ手順です。
+実行ファイルは、PATHに含まれる`~/.local/bin/claude`に配置され、自動で更新されます。
+
+`.npmrc`でnpmのprefixを`~/.local`にしているため、npm版も同じ`~/.local/bin/claude`に入ります。
+npm版を導入済みの場合は、先に`npm uninstall -g @anthropic-ai/claude-code`で削除してください。
+
+```zsh
+if ! command -v claude >/dev/null; then
+  curl -fsSL https://claude.ai/install.sh | bash
+fi
+claude --version
+```
+
+### 4. dotfilesを配置
 
 ```zsh
 ./deploy.sh
@@ -156,7 +171,10 @@ sheldon lock
 
 既存ファイルがある場合は、バックアップして置き換えるか確認します。`~/.config` 全体ではなく、管理対象のサブディレクトリだけをリンクします。配置後の `sheldon lock` で、プラグインを初回取得します。
 
-### 4. private設定を作成
+Claude Code を使うマシンでは、`./deploy.sh --claude` でシェル設定と Claude 用のスキルを配置できます。
+シェル設定が導入済みなら、`./deploy.sh --claude --skills-only` でスキルだけを配置できます。プレビューと SSH 先への配備は [スキル管理ガイド](docs/codex-skills.md#claude-code) を参照してください。
+
+### 5. private設定を作成
 
 ```zsh
 cp .zshrc.private.example ~/.zshrc.private
@@ -165,7 +183,7 @@ chmod 600 ~/.zshrc.private
 
 Slack通知を使う場合だけ、`SLACK_WEBHOOK_URL` を設定してください。実ファイルはGit管理されません。
 
-### 5. 新しいZshを開始
+### 6. 新しいZshを開始
 
 ```zsh
 exec zsh
