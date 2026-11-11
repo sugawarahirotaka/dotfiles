@@ -38,6 +38,19 @@ Finalize one owned or vendored skill after deployment:
 
 The finalize command runs the skill's tests when a supported test layout exists, rejects unrelated staged changes, stages only the target skill and shared management files, creates no empty commit, and never pushes.
 
+## Claude Code
+
+Registry entries with `claude_enabled: true` are linked individually under `~/.claude/skills` from the same sources as Codex. This flag applies to owned and vendored skills. Deployment honors `CLAUDE_CONFIG_DIR` for the current user. When `DOTFILES_TARGET_HOME` is set, it uses that home's `.claude/skills` instead.
+
+```zsh
+./deploy.sh --claude --skills-only --dry-run
+./deploy.sh --claude --skills-only --non-interactive
+```
+
+To deploy the shell configuration and Claude skills together, use `./deploy.sh --claude`. For an SSH session, run the deployment from the checkout on the remote host. Claude Code reads personal skills from the home directory on that host.
+
+With `--non-interactive`, existing conflicting paths stay in place and deployment reports a failure. Interactive replacement backs up conflicts under the Claude configuration directory's `skill-backups/<timestamp>/`. Disabling a skill in the registry skips it on future runs. To withdraw it from an existing installation, remove its symlink after checking the target.
+
 ## Updating external and plugin skills
 
 For a vendored update, fetch an immutable upstream revision, verify the license, compare the recorded upstream subdirectory, replace only that snapshot, and update both `UPSTREAM.json` and the registry before finalizing. Never bring an upstream `.git`, virtual environment, cache, log, or generated test output into the repository.

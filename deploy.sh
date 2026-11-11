@@ -8,14 +8,23 @@ DOTFILES_DIR="${SCRIPT_PATH:A:h}"
 TARGET_HOME="${DOTFILES_TARGET_HOME:-$HOME}"
 DRY_RUN=0
 NON_INTERACTIVE=0
+DEPLOY_CLAUDE=0
+SKILLS_ONLY=0
 SKILL_ARGS=()
 
 usage() {
-  echo "usage: ${0:t} [--dry-run] [--non-interactive]" >&2
+  echo "usage: ${0:t} [--claude] [--skills-only] [--dry-run] [--non-interactive]" >&2
 }
 
 while (( $# > 0 )); do
   case "$1" in
+    --claude)
+      DEPLOY_CLAUDE=1
+      SKILL_ARGS+=("--claude")
+      ;;
+    --skills-only)
+      SKILLS_ONLY=1
+      ;;
     --dry-run)
       DRY_RUN=1
       SKILL_ARGS+=("--dry-run")
@@ -37,7 +46,7 @@ while (( $# > 0 )); do
   shift
 done
 
-if [[ -z "$TARGET_HOME" || "$TARGET_HOME" == "/" ]]; then
+if [[ -z "$TARGET_HOME" || "${TARGET_HOME:A}" == "/" ]]; then
   echo "[error] invalid deploy target: $TARGET_HOME" >&2
   exit 1
 fi
@@ -56,7 +65,6 @@ HOME_LINKS=(
   ".zprofile"
   ".zshenv"
   ".zshrc"
-  "codex-remote-toggle.sh"
 )
 
 # ~/.config 全体ではなく、管理対象のサブディレクトリだけを配置する。
@@ -190,15 +198,20 @@ link_item() {
 main() {
   local name
 
-  for name in "${HOME_LINKS[@]}"; do
-    link_item "$DOTFILES_DIR/$name" "$TARGET_HOME/$name"
-  done
+  if (( ! SKILLS_ONLY )); then
+    for name in "${HOME_LINKS[@]}"; do
+      link_item "$DOTFILES_DIR/$name" "$TARGET_HOME/$name"
+    done
 
-  for name in "${CONFIG_LINKS[@]}"; do
-    link_item "$DOTFILES_DIR/.config/$name" "$TARGET_HOME/.config/$name"
-  done
+    for name in "${CONFIG_LINKS[@]}"; do
+      link_item "$DOTFILES_DIR/.config/$name" "$TARGET_HOME/.config/$name"
+    done
 
-  link_item "$DOTFILES_DIR/.codex/AGENTS.md" "$TARGET_HOME/.codex/AGENTS.md"
+    if (( ! DEPLOY_CLAUDE )); then
+      link_item "$DOTFILES_DIR/codex-remote-toggle.sh" "$TARGET_HOME/codex-remote-toggle.sh"
+      link_item "$DOTFILES_DIR/.codex/AGENTS.md" "$TARGET_HOME/.codex/AGENTS.md"
+    fi
+  fi
   "$DOTFILES_DIR/scripts/deploy-codex-skills.zsh" "${SKILL_ARGS[@]}"
 }
 

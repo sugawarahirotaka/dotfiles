@@ -96,6 +96,11 @@ def validate_registry(data: dict) -> list[str]:
             errors.append(f"skill {name} has invalid kind: {kind!r}")
         if not isinstance(skill.get("enabled"), bool):
             errors.append(f"skill {name} enabled must be boolean")
+        claude_enabled = skill.get("claude_enabled", False)
+        if not isinstance(claude_enabled, bool):
+            errors.append(f"skill {name} claude_enabled must be boolean")
+        elif claude_enabled and (kind not in MANAGED_KINDS or name in {"synced", "anthropic-skills"}):
+            errors.append(f"skill {name} is not eligible for Claude deployment")
         for field in ("local_path", "destination", "upstream", "version", "plugin_id", "license", "notes"):
             if not isinstance(skill.get(field), str):
                 errors.append(f"skill {name} field {field} must be a string")
@@ -269,9 +274,13 @@ def command_managed_links(args: argparse.Namespace) -> int:
     errors = validate_registry(data)
     if errors:
         raise RegistryError("; ".join(errors))
+    enabled_field = "claude_enabled" if args.claude else "enabled"
     for skill in data["skills"]:
-        if skill["kind"] in MANAGED_KINDS and skill["enabled"]:
-            source = (repo / skill["local_path"]).resolve()
+        if skill["kind"] in MANAGED_KINDS and skill.get(enabled_field, False):
+            try:
+                source = (repo / skill["local_path"]).resolve()
+            except (OSError, RuntimeError) as exc:
+                raise RegistryError(f"cannot resolve source for {skill['name']}: {exc}") from exc
             sys.stdout.buffer.write(skill["name"].encode() + b"\0" + str(source).encode() + b"\0")
     return 0
 
@@ -448,7 +457,9 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     subparsers.add_parser("validate").set_defaults(func=command_validate)
-    subparsers.add_parser("managed-links").set_defaults(func=command_managed_links)
+    managed_links = subparsers.add_parser("managed-links")
+    managed_links.add_argument("--claude", action="store_true")
+    managed_links.set_defaults(func=command_managed_links)
 
     plugin_names = subparsers.add_parser("plugin-names")
     plugin_names.add_argument("--cache-root")

@@ -191,6 +191,54 @@ else
   fail "plugin skill collision prevents local link"
 fi
 
+create_fixture claude
+CASE_CLAUDE="$CASE_HOME/.claude/skills"
+export CLAUDE_CONFIG_DIR="$CASE_ROOT/other-claude-config"
+if run_deploy --claude --non-interactive >/dev/null && [[ ! -e "$CASE_CLAUDE" ]]; then
+  pass "Claude deployment requires explicit opt-in per skill"
+else
+  fail "Claude deployment requires explicit opt-in per skill"
+fi
+
+python3 - "$CASE_REPO/.codex/skills-registry.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+registry = Path(sys.argv[1])
+data = json.loads(registry.read_text(encoding="utf-8"))
+data["skills"][0]["claude_enabled"] = True
+registry.write_text(json.dumps(data), encoding="utf-8")
+PY
+if run_deploy --claude --dry-run >/dev/null && [[ ! -e "$CASE_CLAUDE" ]] \
+  && run_deploy --claude --non-interactive >/dev/null \
+  && [[ -L "$CASE_CLAUDE/alpha" && ! -e "$CASE_CODEX/alpha" && ! -e "$CLAUDE_CONFIG_DIR" ]] \
+  && [[ "$(readlink "$CASE_CLAUDE/alpha")" == "${CASE_REPO:A}/.codex/skills/alpha" ]] \
+  && output="$(run_deploy --claude --non-interactive)" && [[ "$output" == *"already linked"* ]]; then
+  pass "Claude preview and idempotent per-skill deployment"
+else
+  fail "Claude preview and idempotent per-skill deployment"
+fi
+
+rm "$CASE_CLAUDE/alpha"
+mkdir "$CASE_CLAUDE/alpha"
+if ! run_deploy --claude --non-interactive >/dev/null 2>&1 \
+  && [[ -d "$CASE_CLAUDE/alpha" && ! -L "$CASE_CLAUDE/alpha" ]] \
+  && [[ -z "$(ls -A "$CASE_CLAUDE/alpha")" ]]; then
+  pass "Claude deployment preserves an existing skill directory"
+else
+  fail "Claude deployment preserves an existing skill directory"
+fi
+unset CLAUDE_CONFIG_DIR
+
+mv "$CASE_REPO/.codex/skills/alpha" "$CASE_ROOT/original-alpha"
+ln -s alpha "$CASE_REPO/.codex/skills/alpha"
+if ! output="$(run_deploy --claude --dry-run 2>&1)" && [[ "$output" != *"preview complete"* ]]; then
+  pass "invalid skill source fails the Claude preview"
+else
+  fail "invalid skill source fails the Claude preview"
+fi
+
 create_fixture finalize-scope
 run_deploy --non-interactive >/dev/null
 git -C "$CASE_REPO" init -q

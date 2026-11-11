@@ -217,6 +217,7 @@
     },
     {
       "name": "personal-dev-defaults",
+      "claude_enabled": true,
       "kind": "owned",
       "local_path": ".codex/skills/personal-dev-defaults",
       "destination": "~/.codex/skills/personal-dev-defaults",
@@ -230,6 +231,7 @@
     },
     {
       "name": "write-readable-japanese",
+      "claude_enabled": true,
       "kind": "owned",
       "local_path": ".codex/skills/write-readable-japanese",
       "destination": "~/.codex/skills/write-readable-japanese",
@@ -282,6 +284,7 @@
     },
     {
       "name": "obsidian-markdown",
+      "claude_enabled": true,
       "kind": "vendored",
       "local_path": ".codex/skills/obsidian-markdown",
       "destination": "~/.codex/skills/obsidian-markdown",
