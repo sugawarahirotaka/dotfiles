@@ -248,32 +248,42 @@ def process_table() -> List[Dict[str, str]]:
 
 
 def running_codex_processes() -> List[CodexProcess]:
-    """This user's Codex processes that may hold the login, except the daemon updater."""
+    """This user's Codex processes and their plugin brokers, except the daemon updater."""
     if os.environ.get("CODEX_ACCOUNT_SKIP_APP_CONTROL") == "1" and not os.environ.get("CODEX_ACCOUNT_PS_FIXTURE"):
         return []
     table = process_table()
-    args_by_pid = {row["pid"]: row["args"] for row in table}
+    rows_by_pid = {row["pid"]: row for row in table}
     uid = str(os.getuid())
-    found = []
+    found = {}
     for row in table:
         name = os.path.basename(row["comm"])
         if not (name == "codex" or name.startswith("codex-")):
             continue
         if row["uid"] != uid or row["pid"] == str(os.getpid()):
             continue
+        parent = rows_by_pid.get(row["ppid"])
         process = CodexProcess(row["pid"], row["ppid"], row["tty"], row["args"] or row["comm"],
-                               args_by_pid.get(row["ppid"], ""))
-        if not process.is_updater:
-            found.append(process)
-    return found
+                               parent["args"] if parent else "")
+        if process.is_updater:
+            continue
+        found[process.pid] = process
+        if (not process.in_terminal and parent and parent["uid"] == uid
+                and os.path.basename(parent["comm"]) == "node"
+                and re.search(r"(?:^|\s)\S*/openai-codex/codex/[^/\s]+/scripts/app-server-broker\.mjs\s+serve(?:\s|$)",
+                              parent["args"])):
+            grandparent = rows_by_pid.get(parent["ppid"])
+            found[parent["pid"]] = CodexProcess(
+                parent["pid"], parent["ppid"], parent["tty"], parent["args"],
+                grandparent["args"] if grandparent else "")
+    return list(found.values())
 
 
 def stop_background(processes: List[CodexProcess]) -> None:
-    """Stop background Codex servers: the managed daemon through its own command, others by SIGTERM."""
+    """Stop servers and plugin brokers; use the managed daemon's own stop command."""
     pids = {process.pid for process in processes}
     fixture = os.environ.get("CODEX_ACCOUNT_PS_FIXTURE")
     if fixture:
-        rows = [row for row in json.loads(Path(fixture).read_text()) if row["pid"] not in pids and row["ppid"] not in pids]
+        rows = [row for row in json.loads(Path(fixture).read_text()) if row["pid"] not in pids]
         Path(fixture).write_text(json.dumps(rows))
         return
     if any(process.is_daemon for process in processes):
@@ -287,7 +297,8 @@ def stop_background(processes: List[CodexProcess]) -> None:
             except ProcessLookupError:
                 pass
     for _ in range(50):
-        if not any(process.pid in pids for process in running_codex_processes()):
+        # A broker can outlive its child, so wait for every selected PID directly.
+        if not any(row["pid"] in pids and row["uid"] == str(os.getuid()) for row in process_table()):
             return
         time.sleep(0.2)
     raise AccountError("background Codex processes did not stop; auth.json was not changed")

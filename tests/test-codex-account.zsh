@@ -158,6 +158,122 @@ if run use lab --yes >/dev/null 2>&1 && [[ "$(refresh_of "$CODEX_HOME/auth.json"
 else
   fail "background servers are stopped and the updater is left alone"
 fi
+
+BROKER="/opt/claude/plugins/cache/openai-codex/codex/1.2.3/scripts/app-server-broker.mjs"
+write_ps "500|1|me|??|/usr/local/bin/node $BROKER serve --socket /tmp/codex.sock" \
+  "501|500|me|??|/usr/local/bin/codex app-server" \
+  "502|500|me|??|/usr/local/bin/codex app-server"
+if run use personal --yes >"$TEST_TMP/broker-output" 2>&1 \
+  && [[ "$(refresh_of "$CODEX_HOME/auth.json")" == r2 ]] \
+  && [[ "$(grep -c '500 (background)' "$TEST_TMP/broker-output")" == 1 ]] \
+  && [[ "$(cat "$CODEX_ACCOUNT_PS_FIXTURE")" != *'"500"'* \
+     && "$(cat "$CODEX_ACCOUNT_PS_FIXTURE")" != *'"501"'* \
+     && "$(cat "$CODEX_ACCOUNT_PS_FIXTURE")" != *'"502"'* ]]; then
+  pass "plugin broker is listed once and stopped along with its Codex children"
+else
+  fail "plugin broker is listed once and stopped along with its Codex children"
+fi
+
+write_ps "510|1|other|??|/usr/local/bin/node $BROKER serve" \
+  "511|510|me|??|/usr/local/bin/codex app-server" \
+  "520|1|me|??|/usr/local/bin/node /other/scripts/app-server-broker.mjs serve" \
+  "521|520|me|??|/usr/local/bin/codex app-server" \
+  "530|1|me|??|/usr/local/bin/python3 $BROKER serve" \
+  "531|530|me|??|/usr/local/bin/codex app-server" \
+  "540|1|me|??|/usr/local/bin/node $BROKER serve" \
+  "541|540|other|??|/usr/local/bin/codex app-server" \
+  "550|1|me|??|/usr/local/bin/node $BROKER serve" \
+  "551|550|me|??|/opt/codex/bin/codex app-server daemon pid-update-loop"
+if run use lab --yes >/dev/null 2>&1 \
+  && python3 - "$CODEX_ACCOUNT_PS_FIXTURE" <<'PY'
+import json, sys
+pids = {row["pid"] for row in json.load(open(sys.argv[1]))}
+assert pids == {"1", "510", "520", "530", "540", "541", "550", "551"}, pids
+PY
+then
+  pass "only same-user plugin node brokers with eligible Codex children are stopped"
+else
+  fail "only same-user plugin node brokers with eligible Codex children are stopped"
+fi
+
+write_ps "560|1|me|ttys005|/usr/local/bin/node $BROKER serve" \
+  "561|560|me|??|/usr/local/bin/codex app-server"
+if ! run use personal --yes >"$TEST_TMP/broker-output" 2>&1 \
+  && [[ "$(refresh_of "$CODEX_HOME/auth.json")" == r9 ]] \
+  && [[ "$(cat "$TEST_TMP/broker-output")" == *'560 (terminal ttys005)'* ]] \
+  && [[ "$(cat "$CODEX_ACCOUNT_PS_FIXTURE")" == *'"561"'* ]]; then
+  pass "a plugin broker attached to a terminal blocks switching"
+else
+  fail "a plugin broker attached to a terminal blocks switching"
+fi
+
+write_ps "600|1|me|??|/usr/local/bin/node $BROKER serve" \
+  "601|600|me|??|/usr/local/bin/codex app-server" \
+  "602|1|me|??|/usr/local/bin/codex app-server --managed-daemon" \
+  "603|602|me|??|/usr/local/bin/codex app-server daemon pid-update-loop"
+if python3 - "$TOOL" "$CODEX_ACCOUNT_PS_FIXTURE" <<'PY'
+import importlib.util, json, os, signal, sys
+from pathlib import Path
+from unittest.mock import patch
+
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location("codex_account", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+fixture = Path(sys.argv[2])
+processes = module.running_codex_processes()
+assert {process.pid for process in processes} == {"600", "601", "602"}
+
+def rows():
+    return json.loads(fixture.read_text())
+
+def remove(pid):
+    fixture.write_text(json.dumps([row for row in rows() if row["pid"] != pid]))
+
+def terminate(pid, sig):
+    assert sig == signal.SIGTERM
+    assert pid in {600, 601}, pid
+    if pid == 601:
+        remove("601")
+
+def daemon_stop(command, **kwargs):
+    assert command == [os.environ["CODEX_ACCOUNT_CODEX_BIN"], "app-server", "daemon", "stop"]
+    remove("602")
+
+def broker_exits_after_child(_):
+    assert {row["pid"] for row in rows()} == {"1", "600", "603"}
+    remove("600")
+
+# Exercise real shutdown logic without sending signals to the fixture's PIDs.
+with patch.dict(os.environ):
+    del os.environ["CODEX_ACCOUNT_PS_FIXTURE"]
+    with patch.object(module, "process_table", side_effect=rows), \
+         patch.object(module.os, "kill", side_effect=terminate) as kill, \
+         patch.object(module.subprocess, "run", side_effect=daemon_stop) as run, \
+         patch.object(module.time, "sleep", side_effect=broker_exits_after_child) as sleep:
+        module.stop_background(processes)
+        assert {call.args[0] for call in kill.call_args_list} == {600, 601}
+        assert kill.call_count == 2
+        run.assert_called_once()
+        sleep.assert_called_once()
+
+    # An orphaned broker that ignores SIGTERM must prevent the auth swap.
+    broker = next(process for process in processes if process.pid == "600")
+    with patch.object(module, "process_table", return_value=[{
+            "pid": "600", "uid": str(os.getuid())}]), \
+         patch.object(module.os, "kill"), patch.object(module.time, "sleep"):
+        try:
+            module.stop_background([broker])
+        except module.AccountError as exc:
+            assert "auth.json was not changed" in str(exc)
+        else:
+            raise AssertionError("shutdown did not wait for the orphaned broker")
+PY
+then
+  pass "shutdown signals brokers, waits for their exit, and uses daemon stop"
+else
+  fail "shutdown signals brokers, waits for their exit, and uses daemon stop"
+fi
 unset CODEX_ACCOUNT_PS_FIXTURE
 
 if run remove personal >/dev/null && [[ ! -e "$CODEX_HOME/auth-profiles/personal.json" ]]; then
