@@ -438,7 +438,9 @@ def check_vendored_metadata(name: str, entry: dict, source: Path) -> list[str]:
     return errors
 
 
-def check_codex_discovery(args: argparse.Namespace, inventory: dict, codex_root: Path, home: Path) -> list[str]:
+def check_codex_discovery(
+    args: argparse.Namespace, inventory: dict, codex_root: Path, home: Path, warnings: list[str]
+) -> list[str]:
     """Codex also discovers ~/.agents/skills and plugin skills; names must stay unique."""
     errors: list[str] = []
     agents_root = Path(args.agents_skills_root).expanduser().resolve() if args.agents_skills_root else home / ".agents/skills"
@@ -466,7 +468,12 @@ def check_codex_discovery(args: argparse.Namespace, inventory: dict, codex_root:
         source = expand_user_path(entry["local_path"], home)
         destination = expand_user_path(entry["destination"], home)
         if not source.is_dir() or not (source / "SKILL.md").is_file():
-            errors.append(f"project skill source is missing: {source}")
+            # Project sources live outside dotfiles (e.g. an iCloud vault on one Mac).
+            # Without the source and the link, the skill is simply not set up here.
+            if destination.is_symlink():
+                errors.append(f"project skill {entry['name']} link exists but its source is missing: {source}")
+            else:
+                warnings.append(f"project skill {entry['name']} is not available on this machine: {source}")
         elif (problem := check_link(destination, source)) is not None:
             errors.append(f"project skill {entry['name']}: {problem}")
     return errors
@@ -516,7 +523,7 @@ def command_check(args: argparse.Namespace) -> int:
                     errors.append(f"{agent}: broken skill symlink: {child} -> {os.readlink(child)}")
 
     if "codex" in agent_roots:
-        errors.extend(check_codex_discovery(args, inventory, agent_roots["codex"], home))
+        errors.extend(check_codex_discovery(args, inventory, agent_roots["codex"], home, warnings))
 
     daily = managed_root / "daily-neruwa"
     if daily.is_dir():
