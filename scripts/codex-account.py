@@ -192,17 +192,61 @@ def quit_app() -> None:
     raise AccountError("the Codex app did not quit; auth.json was not changed")
 
 
-def running_codex_processes() -> List[str]:
+class CodexProcess:
+    def __init__(self, pid: str, tty: str, args: str) -> None:
+        self.pid = pid
+        self.tty = tty
+        self.args = args
+
+    @property
+    def is_daemon(self) -> bool:
+        # The background app server that the app and CLI share; it outlives them.
+        return " app-server" in self.args and (
+            "--managed-daemon" in self.args or "pid-update-loop" in self.args
+        )
+
+    def __str__(self) -> str:
+        where = f"terminal {self.tty}" if self.tty not in {"??", "?", "-"} else "background"
+        return f"{self.pid} ({where}) {self.args[:160]}"
+
+
+def ps_column(column: str) -> Dict[str, str]:
+    result = subprocess.run(["ps", "-axo", f"pid=,{column}="], capture_output=True, text=True)
+    table = {}
+    for line in result.stdout.splitlines():
+        pid, _, value = line.strip().partition(" ")
+        table[pid] = value.strip()
+    return table
+
+
+def running_codex_processes() -> List[CodexProcess]:
     if os.environ.get("CODEX_ACCOUNT_SKIP_APP_CONTROL") == "1":
         return []
-    result = subprocess.run(["ps", "-axo", "pid=,comm="], capture_output=True, text=True)
+    commands = ps_column("comm")
+    ttys = ps_column("tty")
+    args = ps_column("args")
     found = []
-    for line in result.stdout.splitlines():
-        pid, _, command = line.strip().partition(" ")
-        name = os.path.basename(command.strip())
-        if name == "codex" or name.startswith("codex-"):
-            found.append(f"{pid} {command.strip()}")
+    for pid, command in commands.items():
+        name = os.path.basename(command)
+        if (name == "codex" or name.startswith("codex-")) and pid != str(os.getpid()):
+            found.append(CodexProcess(pid, ttys.get(pid, "?"), args.get(pid, command)))
     return found
+
+
+def stop_daemon() -> None:
+    codex_bin = os.environ.get("CODEX_ACCOUNT_CODEX_BIN") or shutil.which("codex")
+    if not codex_bin:
+        raise AccountError("codex command not found; stop the app-server daemon manually")
+    subprocess.run([codex_bin, "app-server", "daemon", "stop"], capture_output=True)
+    for _ in range(100):
+        if not any(process.is_daemon for process in running_codex_processes()):
+            return
+        time.sleep(0.1)
+    raise AccountError("the Codex app-server daemon did not stop; auth.json was not changed")
+
+
+def describe_processes(processes: List[CodexProcess]) -> str:
+    return "\n  ".join(str(process) for process in processes)
 
 
 def command_list(args: argparse.Namespace) -> int:
@@ -297,13 +341,23 @@ def command_use(args: argparse.Namespace) -> int:
         quit_app()
         reopen = not args.no_reopen
 
-    processes = running_codex_processes()
-    if processes and not args.force:
-        listing = "\n  ".join(processes)
-        raise AccountError(
-            "Codex is still running and may overwrite auth.json:\n  "
-            f"{listing}\nfinish these sessions first, or pass --force"
-        )
+    if not args.force:
+        processes = running_codex_processes()
+        sessions = [process for process in processes if not process.is_daemon]
+        if sessions:
+            raise AccountError(
+                "Codex sessions are still running and may overwrite auth.json:\n  "
+                f"{describe_processes(sessions)}\nexit them (e.g. /quit in each terminal) first, or pass --force"
+            )
+        if any(process.is_daemon for process in processes):
+            if not (args.yes or ask_yes_no("Stop the Codex background server (app-server daemon)?")):
+                raise AccountError("the Codex app-server daemon is running; auth.json was not changed")
+            stop_daemon()
+            remaining = running_codex_processes()
+            if remaining:
+                raise AccountError(
+                    f"Codex started again while switching:\n  {describe_processes(remaining)}"
+                )
 
     # Read after quitting: the app may refresh tokens while shutting down.
     current = read_login(auth_file(home))
