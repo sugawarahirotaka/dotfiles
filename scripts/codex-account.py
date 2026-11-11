@@ -201,9 +201,12 @@ class CodexProcess:
     @property
     def is_daemon(self) -> bool:
         # The background app server that the app and CLI share; it outlives them.
-        return " app-server" in self.args and (
-            "--managed-daemon" in self.args or "pid-update-loop" in self.args
-        )
+        return " app-server" in self.args and "--managed-daemon" in self.args
+
+    @property
+    def is_updater(self) -> bool:
+        # Keeps the daemon package up to date; it does not hold or write the login.
+        return " app-server daemon pid-update-loop" in self.args
 
     def __str__(self) -> str:
         where = f"terminal {self.tty}" if self.tty not in {"??", "?", "-"} else "background"
@@ -229,7 +232,9 @@ def running_codex_processes() -> List[CodexProcess]:
     for pid, command in commands.items():
         name = os.path.basename(command)
         if (name == "codex" or name.startswith("codex-")) and pid != str(os.getpid()):
-            found.append(CodexProcess(pid, ttys.get(pid, "?"), args.get(pid, command)))
+            process = CodexProcess(pid, ttys.get(pid, "?"), args.get(pid, command))
+            if not process.is_updater:
+                found.append(process)
     return found
 
 
