@@ -162,6 +162,13 @@ link_item() {
     return 0
   fi
 
+  # 親ディレクトリのリンク（古い配置の ~/.config -> dotfiles/.config など）を
+  # たどると配置元そのものに着く場合、置き換えると配置元を壊して自己参照リンクになる。
+  if [[ -e "$dst" && ! -L "$dst" && "${dst:A}" == "$src_real" ]]; then
+    echo "[ok] already in place through a parent symlink: $dst"
+    return 0
+  fi
+
   if [[ -L "$dst" ]]; then
     link_target="$(readlink "$dst")" || link_target=""
 

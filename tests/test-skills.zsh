@@ -280,6 +280,41 @@ else
   fail "deploy.sh shares instructions and skills across agents"
 fi
 
+# Old deployments linked all of ~/.config to the checkout; replacing ~/.config/<name>
+# would then move the source itself aside and leave a self-referencing link.
+SELF_ROOT="$TEST_TMP/self-link"
+mkdir -p "$SELF_ROOT/repo/.config/zsh" "$SELF_ROOT/repo/scripts" "$SELF_ROOT/home"
+cp "$REPO_ROOT/deploy.sh" "$SELF_ROOT/repo/"
+cp "$REPO_ROOT/scripts/agent-dirs.zsh" "$SELF_ROOT/repo/scripts/"
+print -r -- "# zsh" > "$SELF_ROOT/repo/.config/zsh/init.zsh"
+ln -s "$SELF_ROOT/repo/.config" "$SELF_ROOT/home/.config"
+if output="$(DOTFILES_TARGET_HOME="$SELF_ROOT/home" "$SELF_ROOT/repo/deploy.sh" --non-interactive 2>&1)" \
+  && [[ "$output" == *"already in place through a parent symlink: $SELF_ROOT/home/.config/zsh"* ]] \
+  && [[ -d "$SELF_ROOT/repo/.config/zsh" && ! -L "$SELF_ROOT/repo/.config/zsh" ]] \
+  && [[ -f "$SELF_ROOT/repo/.config/zsh/init.zsh" ]]; then
+  pass "deploy.sh leaves sources alone when ~/.config links into the checkout"
+else
+  fail "deploy.sh leaves sources alone when ~/.config links into the checkout"
+fi
+
+create_fixture project-skill-elsewhere
+python3 - "$CASE_REPO/.codex/inventory.json" "$CASE_ROOT/vault/memory" <<'PY'
+import json, sys
+path, source = sys.argv[1:]
+data = json.load(open(path))
+data["skills"].append({"name": "memory", "kind": "project", "enabled": True, "local_path": source,
+    "destination": "~/.codex/skills/memory", "upstream": "", "version": "", "plugin_id": "",
+    "license": "", "dependencies": [], "notes": "test"})
+open(path, "w").write(json.dumps(data))
+PY
+run_deploy --non-interactive >/dev/null
+if output="$(run_check 2>&1)" && [[ "$output" == *"not available on this machine"* ]] \
+  && ln -s "$CASE_ROOT/vault/memory" "$CASE_CODEX/memory" && ! run_check >/dev/null 2>&1; then
+  pass "project skill missing on this machine warns, a dangling link fails"
+else
+  fail "project skill missing on this machine warns, a dangling link fails"
+fi
+
 init_fixture_repo() {
   run_deploy --non-interactive >/dev/null
   git -C "$CASE_REPO" init -q
